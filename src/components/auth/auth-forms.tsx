@@ -3,12 +3,17 @@
 import * as React from "react";
 import { SignUpForm } from "./sign-up-form";
 import { SignInForm } from "./sign-in-form";
+import { ForgotPasswordForm } from "./forgot-password-form";
 import { GolfIcon } from "@/components/icons";
 
-export function AuthForms() {
-  const [isSignUp, setIsSignUp] = React.useState(false);
+type FormView = "signin" | "signup" | "forgot";
 
-  const toggleForm = () => setIsSignUp((prev) => !prev);
+export function AuthForms() {
+  const [currentView, setCurrentView] = React.useState<FormView>("signin");
+
+  const showSignIn = () => setCurrentView("signin");
+  const showSignUp = () => setCurrentView("signup");
+  const showForgotPassword = () => setCurrentView("forgot");
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
@@ -18,10 +23,14 @@ export function AuthForms() {
           Caddie Connect
         </h1>
       </div>
-      {isSignUp ? (
-        <SignUpForm onToggleForm={toggleForm} />
-      ) : (
-        <SignInForm onToggleForm={toggleForm} />
+      {currentView === "signup" && (
+        <SignUpForm onToggleForm={showSignIn} />
+      )}
+      {currentView === "signin" && (
+        <SignInForm onToggleForm={showSignUp} onForgotPassword={showForgotPassword} />
+      )}
+      {currentView === "forgot" && (
+        <ForgotPasswordForm onBackToSignIn={showSignIn} />
       )}
     </div>
   );

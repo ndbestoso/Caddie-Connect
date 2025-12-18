@@ -22,39 +22,38 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
-import { signInSchema, type SignInFormData } from "@/lib/validations/auth";
+import { forgotPasswordSchema, type ForgotPasswordFormData } from "@/lib/validations/auth";
 
-interface SignInFormProps {
-  onToggleForm: () => void;
-  onForgotPassword: () => void;
+interface ForgotPasswordFormProps {
+  onBackToSignIn: () => void;
 }
 
-export function SignInForm({ onToggleForm, onForgotPassword }: SignInFormProps) {
-  const { signIn } = useAuth();
+export function ForgotPasswordForm({ onBackToSignIn }: ForgotPasswordFormProps) {
+  const { sendPasswordReset } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const form = useForm<SignInFormData>({
-    resolver: zodResolver(signInSchema),
+  const form = useForm<ForgotPasswordFormData>({
+    resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
       email: "",
-      password: "",
     },
   });
 
-  async function onSubmit(data: SignInFormData) {
+  async function onSubmit(data: ForgotPasswordFormData) {
     setIsLoading(true);
     try {
-      await signIn(data.email, data.password);
+      await sendPasswordReset(data.email);
       toast({
-        title: "Welcome back!",
-        description: "You have signed in successfully.",
+        title: "Password reset email sent",
+        description: "Please check your inbox for the password reset link.",
       });
+      form.reset();
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Sign in failed",
-        description: error instanceof Error ? error.message : "Invalid email or password",
+        title: "Password reset failed",
+        description: error instanceof Error ? error.message : "An error occurred",
       });
     } finally {
       setIsLoading(false);
@@ -64,9 +63,9 @@ export function SignInForm({ onToggleForm, onForgotPassword }: SignInFormProps) 
   return (
     <Card className="w-full max-w-md shadow-lg">
       <CardHeader>
-        <CardTitle>Sign In</CardTitle>
+        <CardTitle>Reset Password</CardTitle>
         <CardDescription>
-          Welcome back to Caddie Connect
+          Enter your email address and we&apos;ll send you a link to reset your password
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -89,33 +88,15 @@ export function SignInForm({ onToggleForm, onForgotPassword }: SignInFormProps) 
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="********" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Sign In"}
+              {isLoading ? "Sending..." : "Send Reset Email"}
             </Button>
           </form>
         </Form>
-        <div className="mt-2 text-center text-sm">
-          <Button variant="link" className="p-0" onClick={onForgotPassword}>
-            Forgot your password?
-          </Button>
-        </div>
         <div className="mt-4 text-center text-sm">
-          Don&apos;t have an account?{" "}
-          <Button variant="link" className="p-0" onClick={onToggleForm}>
-            Sign up
+          Remember your password?{" "}
+          <Button variant="link" className="p-0" onClick={onBackToSignIn}>
+            Back to Sign In
           </Button>
         </div>
       </CardContent>
