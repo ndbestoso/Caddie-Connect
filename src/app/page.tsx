@@ -39,32 +39,33 @@ export default function Home() {
   }
 
   return (
-    
-    
+    <div className="flex min-h-screen w-full flex-col">
       <Header />
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <Tabs defaultValue="availability" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 h-12">
-            <TabsTrigger value="availability" className="text-sm">
-              <CalendarDays className="mr-2 h-5 w-5" />
+      <main className="flex flex-1 flex-col gap-6 p-6 md:gap-8 md:p-8 lg:p-10 max-w-[1400px] mx-auto w-full">
+        <Tabs defaultValue="availability" className="w-full space-y-6">
+          <TabsList className="grid w-full grid-cols-3 h-12 bg-muted/50">
+            <TabsTrigger value="availability" className="text-sm data-[state=active]:bg-background">
+              <CalendarDays className="mr-2 h-4 w-4" />
               Availability
             </TabsTrigger>
-            <TabsTrigger value="schedule" className="text-sm">
-              <ListChecks className="mr-2 h-5 w-5" />
+            <TabsTrigger value="schedule" className="text-sm data-[state=active]:bg-background">
+              <ListChecks className="mr-2 h-4 w-4" />
               Schedule
             </TabsTrigger>
-            <TabsTrigger value="announcements" className="text-sm">
-              <Megaphone className="mr-2 h-5 w-5" />
+            <TabsTrigger value="announcements" className="text-sm data-[state=active]:bg-background">
+              <Megaphone className="mr-2 h-4 w-4" />
               Announcements
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="availability" className="mt-6">
-            <AvailabilityForm />
+          <TabsContent value="availability" className="mt-0 flex justify-center">
+            <div className="w-full max-w-4xl">
+              <AvailabilityForm />
+            </div>
           </TabsContent>
-          <TabsContent value="schedule" className="mt-6">
+          <TabsContent value="schedule" className="mt-0">
             <ScheduleView />
           </TabsContent>
-          <TabsContent value="announcements" className="mt-6">
+          <TabsContent value="announcements" className="mt-0">
             <Announcements />
           </TabsContent>
         </Tabs>

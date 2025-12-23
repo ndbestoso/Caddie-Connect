@@ -4,13 +4,6 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Form,
   FormControl,
   FormField,
@@ -62,71 +55,92 @@ export function SignUpForm({ onToggleForm }: SignUpFormProps) {
   }
 
   return (
-    <Card className="w-full max-w-md shadow-lg">
-      <CardHeader>
-        <CardTitle>Create an Account</CardTitle>
-        <CardDescription>
-          Sign up to start managing your caddie schedule
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="you@example.com"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="********" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="********" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating account..." : "Sign Up"}
-            </Button>
-          </form>
-        </Form>
-        <div className="mt-4 text-center text-sm">
+    <div className="w-full">
+      <div className="mb-8">
+        <h2 className="text-3xl font-bold tracking-tight mb-2">Create an account</h2>
+        <p className="text-muted-foreground">
+          Get started with Caddie Connect today
+        </p>
+      </div>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium">Email address</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="you@example.com"
+                    className="h-11"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium">Password</FormLabel>
+                <FormControl>
+                  <Input
+                    type="password"
+                    placeholder="Create a password"
+                    className="h-11"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium">Confirm password</FormLabel>
+                <FormControl>
+                  <Input
+                    type="password"
+                    placeholder="Confirm your password"
+                    className="h-11"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button
+            type="submit"
+            className="w-full h-11 text-base font-medium"
+            disabled={isLoading}
+          >
+            {isLoading ? "Creating account..." : "Create Account"}
+          </Button>
+        </form>
+      </Form>
+
+      <div className="mt-6 text-center">
+        <p className="text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Button variant="link" className="p-0" onClick={onToggleForm}>
+          <Button
+            variant="link"
+            className="p-0 h-auto font-semibold text-primary hover:text-primary/80"
+            onClick={onToggleForm}
+          >
             Sign in
           </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </p>
+      </div>
+    </div>
   );
 }

@@ -4,13 +4,6 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Form,
   FormControl,
   FormField,
@@ -62,63 +55,84 @@ export function SignInForm({ onToggleForm, onForgotPassword }: SignInFormProps) 
   }
 
   return (
-    <Card className="w-full max-w-md shadow-lg">
-      <CardHeader>
-        <CardTitle>Sign In</CardTitle>
-        <CardDescription>
-          Welcome back to Caddie Connect
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="you@example.com"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="********" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Sign In"}
-            </Button>
-          </form>
-        </Form>
-        <div className="mt-2 text-center text-sm">
-          <Button variant="link" className="p-0" onClick={onForgotPassword}>
-            Forgot your password?
+    <div className="w-full">
+      <div className="mb-8">
+        <h2 className="text-3xl font-bold tracking-tight mb-2">Welcome back</h2>
+        <p className="text-muted-foreground">
+          Sign in to your account to continue
+        </p>
+      </div>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium">Email address</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="you@example.com"
+                    className="h-11"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <div className="flex items-center justify-between">
+                  <FormLabel className="text-sm font-medium">Password</FormLabel>
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="p-0 h-auto text-sm font-normal text-primary hover:text-primary/80"
+                    onClick={onForgotPassword}
+                  >
+                    Forgot password?
+                  </Button>
+                </div>
+                <FormControl>
+                  <Input
+                    type="password"
+                    placeholder="Enter your password"
+                    className="h-11"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button
+            type="submit"
+            className="w-full h-11 text-base font-medium"
+            disabled={isLoading}
+          >
+            {isLoading ? "Signing in..." : "Sign In"}
           </Button>
-        </div>
-        <div className="mt-4 text-center text-sm">
+        </form>
+      </Form>
+
+      <div className="mt-6 text-center">
+        <p className="text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
-          <Button variant="link" className="p-0" onClick={onToggleForm}>
+          <Button
+            variant="link"
+            className="p-0 h-auto font-semibold text-primary hover:text-primary/80"
+            onClick={onToggleForm}
+          >
             Sign up
           </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </p>
+      </div>
+    </div>
   );
 }

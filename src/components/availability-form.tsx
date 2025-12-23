@@ -20,12 +20,10 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
 const TIME_OPTIONS = [
-  { id: "7am", label: "7:00 AM" },
-  { id: "8am", label: "8:00 AM" },
-  { id: "9am", label: "9:00 AM" },
-  { id: "10am", label: "10:00 AM" },
-  { id: "11am", label: "11:00 AM" },
-  { id: "12pm", label: "12:00 PM" },
+  { id: "7am-9am", label: "7am - 9am" },
+  { id: "10am", label: "10am" },
+  { id: "11am", label: "11am" },
+  { id: "12pm", label: "12pm" },
 ];
 
 export function AvailabilityForm() {
@@ -47,13 +45,24 @@ export function AvailabilityForm() {
       where("userId", "==", user.uid)
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const dates = snapshot.docs.map((doc) => new Date(doc.data().date));
-      setSubmittedDates(dates);
-    });
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const dates = snapshot.docs.map((doc) => new Date(doc.data().date));
+        setSubmittedDates(dates);
+      },
+      (error) => {
+        console.error("Error fetching availability:", error);
+        toast({
+          variant: "destructive",
+          title: "Failed to load availability",
+          description: "Please make sure Firestore rules are deployed.",
+        });
+      }
+    );
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, toast]);
 
   // Filter submitted dates: locked if passed or within 8 hours
   const now = new Date();
@@ -127,10 +136,10 @@ export function AvailabilityForm() {
   };
 
   return (
-    <Card className="shadow-lg">
-      <CardHeader>
-        <CardTitle>Submit Your Availability</CardTitle>
-        <CardDescription>
+    <Card className="border-none shadow-sm">
+      <CardHeader className="pb-6">
+        <CardTitle className="text-2xl">Submit Your Availability</CardTitle>
+        <CardDescription className="text-base">
           Select the day you are available to work.
         </CardDescription>
       </CardHeader>
@@ -162,54 +171,88 @@ export function AvailabilityForm() {
               }}
             />
             <div className="w-full space-y-4 lg:w-auto">
-              <h3 className="font-semibold text-card-foreground">
+              <h3 className="font-semibold text-lg text-card-foreground">
                 Time Preference
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {TIME_OPTIONS.map((time) => (
-                  <div key={time.id} className="flex items-center space-x-2">
+                  <label
+                    key={time.id}
+                    htmlFor={time.id}
+                    className="flex items-center space-x-3 cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors"
+                  >
                     <Checkbox
                       id={time.id}
                       checked={selectedTimes.includes(time.id)}
                       onCheckedChange={() => handleTimeToggle(time.id)}
+                      className="h-5 w-5"
                     />
-                    <Label htmlFor={time.id}>{time.label}</Label>
-                  </div>
+                    <span className="text-base flex-1">{time.label}</span>
+                  </label>
                 ))}
               </div>
             </div>
-          </div>
 
-          {/* Display selected day and times */}
-          {selectedDate || selectedTimes.length > 0 ? (
-            <div className="rounded-md border p-4 bg-muted/50">
-              <h4 className="font-semibold mb-3">Your Selection</h4>
-              {selectedDate && (
-                <div className="mb-3">
-                  <p className="text-sm text-muted-foreground mb-2">Selected Day:</p>
-                  <Badge variant="secondary">
-                    {format(selectedDate, "EEE, MMM d")}
-                  </Badge>
-                </div>
-              )}
-              {selectedTimes.length > 0 && (
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Selected Times:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {TIME_OPTIONS.filter((t) => selectedTimes.includes(t.id)).map(
-                      (time) => (
-                        <Badge key={time.id} variant="outline">
-                          {time.label}
-                        </Badge>
-                      )
+            {/* Display selected day to the right of times */}
+            {selectedDate && (
+              <div className="w-full lg:w-auto space-y-4">
+                <h3 className="font-semibold text-card-foreground">
+                  Selected Day
+                </h3>
+                <div className="rounded-md border p-4 bg-muted/50 space-y-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">Day:</p>
+                    <Badge variant="secondary" className="text-base">
+                      {format(selectedDate, "EEE, MMM d, yyyy")}
+                    </Badge>
+                  </div>
+
+                  {/* Show status of the day */}
+                  <div className="pt-2 border-t">
+                    <p className="text-sm font-semibold mb-2">Day Status:</p>
+                    {submittedDates.some(
+                      (date) => format(date, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd")
+                    ) ? (
+                      <div className="space-y-2">
+                        {lockedDates.some(
+                          (date) => format(date, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd")
+                        ) ? (
+                          <p className="text-sm text-muted-foreground">
+                            ✓ Availability submitted (Locked - within 8 hours or passed)
+                          </p>
+                        ) : (
+                          <p className="text-sm text-green-600">
+                            ✓ Availability already submitted for this day
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        No availability submitted yet
+                      </p>
                     )}
                   </div>
-                </div>
-              )}
-            </div>
-          ) : null}
 
-          <Button type="submit" variant="destructive" size="lg" disabled={isSubmitting}>
+                  {selectedTimes.length > 0 && (
+                    <div className="pt-2 border-t">
+                      <p className="text-sm font-semibold mb-2">Selected Times:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {TIME_OPTIONS.filter((t) => selectedTimes.includes(t.id)).map(
+                          (time) => (
+                            <Badge key={time.id} variant="outline">
+                              {time.label}
+                            </Badge>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <Button type="submit" variant="destructive" size="lg" className="h-11 text-base font-medium" disabled={isSubmitting}>
             {isSubmitting ? "Submitting..." : "Submit Availability"}
           </Button>
         </form>

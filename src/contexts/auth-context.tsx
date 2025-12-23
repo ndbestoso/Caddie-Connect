@@ -9,11 +9,14 @@ import {
   onAuthStateChanged,
   sendPasswordResetEmail,
 } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { doc, setDoc, onSnapshot, getDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  userRole: 'caddie' | 'admin' | null;
+  roleLoading: boolean;
   signUp: (email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -25,6 +28,8 @@ const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [userRole, setUserRole] = React.useState<'caddie' | 'admin' | null>(null);
+  const [roleLoading, setRoleLoading] = React.useState(true);
 
   React.useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -34,8 +39,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsubscribe;
   }, []);
 
+  React.useEffect(() => {
+    if (!user) {
+      setUserRole(null);
+      setRoleLoading(false);
+      return;
+    }
+
+    setRoleLoading(true);
+    const userDocRef = doc(db, "users", user.uid);
+    const unsubscribe = onSnapshot(
+      userDocRef,
+      async (docSnap) => {
+        if (docSnap.exists()) {
+          setUserRole(docSnap.data().role || 'caddie');
+        } else {
+          await setDoc(userDocRef, {
+            email: user.email,
+            role: 'caddie',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          });
+          setUserRole('caddie');
+        }
+        setRoleLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching user role:", error);
+        setUserRole('caddie');
+        setRoleLoading(false);
+      }
+    );
+
+    return unsubscribe;
+  }, [user]);
+
   const signUp = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    await setDoc(doc(db, "users", userCredential.user.uid), {
+      email: email,
+      role: 'caddie',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
   };
 
   const signIn = async (email: string, password: string) => {
@@ -66,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signUp, signIn, signOut, sendPasswordReset }}>
+    <AuthContext.Provider value={{ user, loading, userRole, roleLoading, signUp, signIn, signOut, sendPasswordReset }}>
       {children}
     </AuthContext.Provider>
   );
