@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { format } from "date-fns";
+import { format, startOfWeek, addDays, isSameDay, isToday } from "date-fns";
 import { collection, addDoc, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/auth-context";
@@ -12,12 +12,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const TIME_OPTIONS = [
   { id: "7am-9am", label: "7am - 9am" },
@@ -35,6 +34,14 @@ export function AvailabilityForm() {
   const [selectedTimes, setSelectedTimes] = React.useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [submittedDates, setSubmittedDates] = React.useState<Date[]>([]);
+
+  // Get current week's days
+  const getCurrentWeekDays = () => {
+    const weekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
+    return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  };
+
+  const weekDays = getCurrentWeekDays();
 
   // Fetch user's submitted availability dates
   React.useEffect(() => {
@@ -68,7 +75,6 @@ export function AvailabilityForm() {
   const now = new Date();
   const eightHoursFromNow = new Date(now.getTime() + 8 * 60 * 60 * 1000);
   const lockedDates = submittedDates.filter((date) => date <= eightHoursFromNow || date < now);
-  const availableDates = submittedDates.filter((date) => date > eightHoursFromNow);
 
   const handleTimeToggle = (timeId: string) => {
     setSelectedTimes((prev) =>
@@ -140,62 +146,95 @@ export function AvailabilityForm() {
       <CardHeader className="pb-6">
         <CardTitle className="text-2xl">Submit Your Availability</CardTitle>
         <CardDescription className="text-base">
-          Select the day you are available to work.
+          Select a day from the current week that you are available to work.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="flex flex-col items-start gap-8 lg:flex-row">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              className="rounded-md border"
-              disabled={(date) => {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                return date < today;
-              }}
-              modifiers={{
-                submitted: availableDates,
-                locked: lockedDates,
-              }}
-              modifiersClassNames={{
-                submitted: "bg-green-500 text-white hover:bg-green-600",
-                locked: "bg-green-500 text-white line-through hover:bg-green-600",
-              }}
-              classNames={{
-                day_selected: selectedTimes.length > 0
-                  ? "bg-green-500 text-white hover:bg-green-600 hover:text-white focus:bg-green-600 focus:text-white"
-                  : "bg-red-500 text-white hover:bg-red-600 hover:text-white focus:bg-red-600 focus:text-white",
-              }}
-            />
-            <div className="w-full space-y-4 lg:w-auto">
+          <div className="flex flex-col gap-8">
+            {/* Week View */}
+            <div className="space-y-4">
               <h3 className="font-semibold text-lg text-card-foreground">
-                Time Preference
+                Select a Day (Current Week)
               </h3>
-              <div className="space-y-4">
-                {TIME_OPTIONS.map((time) => (
-                  <label
-                    key={time.id}
-                    htmlFor={time.id}
-                    className="flex items-center space-x-3 cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors"
-                  >
-                    <Checkbox
-                      id={time.id}
-                      checked={selectedTimes.includes(time.id)}
-                      onCheckedChange={() => handleTimeToggle(time.id)}
-                      className="h-5 w-5"
-                    />
-                    <span className="text-base flex-1">{time.label}</span>
-                  </label>
-                ))}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                {weekDays.map((day) => {
+                  const isPast = day < new Date(new Date().setHours(0, 0, 0, 0));
+                  const isSelected = selectedDate && isSameDay(day, selectedDate);
+                  const isSubmitted = submittedDates.some((date) =>
+                    format(date, "yyyy-MM-dd") === format(day, "yyyy-MM-dd")
+                  );
+                  const isLocked = lockedDates.some((date) =>
+                    format(date, "yyyy-MM-dd") === format(day, "yyyy-MM-dd")
+                  );
+
+                  return (
+                    <button
+                      key={day.toISOString()}
+                      type="button"
+                      disabled={isPast}
+                      onClick={() => setSelectedDate(day)}
+                      className={cn(
+                        "flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all",
+                        "hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none",
+                        isSelected && selectedTimes.length > 0
+                          ? "bg-green-500 text-white border-green-600 shadow-md"
+                          : isSelected
+                          ? "bg-red-500 text-white border-red-600 shadow-md"
+                          : isSubmitted && !isLocked
+                          ? "bg-green-100 border-green-500 text-green-900"
+                          : isLocked
+                          ? "bg-green-100 border-green-500 text-green-900 line-through"
+                          : isToday(day)
+                          ? "border-primary bg-primary/5"
+                          : "border-border bg-background hover:bg-muted/50"
+                      )}
+                    >
+                      <span className="text-xs font-medium uppercase mb-1">
+                        {format(day, "EEE")}
+                      </span>
+                      <span className="text-2xl font-bold">
+                        {format(day, "d")}
+                      </span>
+                      {isSubmitted && (
+                        <span className="text-xs mt-1">
+                          {isLocked ? "Locked" : "Submitted"}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Display selected day to the right of times */}
-            {selectedDate && (
-              <div className="w-full lg:w-auto space-y-4">
+            {/* Time Selection and Selected Day Summary */}
+            <div className="flex flex-col items-start gap-8 lg:flex-row">
+              <div className="w-full space-y-4 lg:w-auto">
+                <h3 className="font-semibold text-lg text-card-foreground">
+                  Time Preference
+                </h3>
+                <div className="space-y-4">
+                  {TIME_OPTIONS.map((time) => (
+                    <label
+                      key={time.id}
+                      htmlFor={time.id}
+                      className="flex items-center space-x-3 cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors"
+                    >
+                      <Checkbox
+                        id={time.id}
+                        checked={selectedTimes.includes(time.id)}
+                        onCheckedChange={() => handleTimeToggle(time.id)}
+                        className="h-5 w-5"
+                      />
+                      <span className="text-base flex-1">{time.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Display selected day to the right of times */}
+              {selectedDate && (
+                <div className="w-full lg:w-auto space-y-4">
                 <h3 className="font-semibold text-card-foreground">
                   Selected Day
                 </h3>
@@ -249,7 +288,8 @@ export function AvailabilityForm() {
                   )}
                 </div>
               </div>
-            )}
+              )}
+            </div>
           </div>
 
           <Button type="submit" variant="destructive" size="lg" className="h-11 text-base font-medium" disabled={isSubmitting}>
