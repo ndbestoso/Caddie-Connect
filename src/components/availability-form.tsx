@@ -12,11 +12,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 const TIME_OPTIONS = [
   { id: "7am-9am", label: "7am - 9am" },
@@ -31,7 +32,7 @@ export function AvailabilityForm() {
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(
     undefined
   );
-  const [selectedTimes, setSelectedTimes] = React.useState<string[]>([]);
+  const [selectedTime, setSelectedTime] = React.useState<string>("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [submittedDates, setSubmittedDates] = React.useState<Date[]>([]);
 
@@ -93,14 +94,6 @@ export function AvailabilityForm() {
   const eightHoursFromNow = new Date(now.getTime() + 8 * 60 * 60 * 1000);
   const lockedDates = submittedDates.filter((date) => date <= eightHoursFromNow || date < now);
 
-  const handleTimeToggle = (timeId: string) => {
-    setSelectedTimes((prev) =>
-      prev.includes(timeId)
-        ? prev.filter((t) => t !== timeId)
-        : [...prev, timeId]
-    );
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDate) {
@@ -112,11 +105,11 @@ export function AvailabilityForm() {
       return;
     }
 
-    if (selectedTimes.length === 0) {
+    if (!selectedTime) {
       toast({
         variant: "destructive",
-        title: "No Times Selected",
-        description: "Please select at least one time preference.",
+        title: "No Time Selected",
+        description: "Please select a time preference.",
       });
       return;
     }
@@ -136,7 +129,7 @@ export function AvailabilityForm() {
         userId: user.uid,
         userEmail: user.email,
         date: selectedDate.toISOString(),
-        times: selectedTimes,
+        time: selectedTime,
         createdAt: new Date().toISOString(),
       });
 
@@ -146,7 +139,7 @@ export function AvailabilityForm() {
       });
       // Reset form state after submission
       setSelectedDate(undefined);
-      setSelectedTimes([]);
+      setSelectedTime("");
     } catch (error) {
       toast({
         variant: "destructive",
@@ -196,7 +189,7 @@ export function AvailabilityForm() {
                       className={cn(
                         "flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all",
                         "hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none",
-                        isSelected && selectedTimes.length > 0
+                        isSelected && selectedTime
                           ? "bg-green-500 text-white border-green-600 shadow-md"
                           : isSelected
                           ? "bg-red-500 text-white border-red-600 shadow-md"
@@ -232,23 +225,21 @@ export function AvailabilityForm() {
                 <h3 className="font-semibold text-lg text-card-foreground">
                   Time Preference
                 </h3>
-                <div className="space-y-4">
-                  {TIME_OPTIONS.map((time) => (
-                    <label
-                      key={time.id}
-                      htmlFor={time.id}
-                      className="flex items-center space-x-3 cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors"
-                    >
-                      <Checkbox
-                        id={time.id}
-                        checked={selectedTimes.includes(time.id)}
-                        onCheckedChange={() => handleTimeToggle(time.id)}
-                        className="h-5 w-5"
-                      />
-                      <span className="text-base flex-1">{time.label}</span>
-                    </label>
-                  ))}
-                </div>
+                <RadioGroup value={selectedTime} onValueChange={setSelectedTime}>
+                  <div className="space-y-4">
+                    {TIME_OPTIONS.map((time) => (
+                      <div
+                        key={time.id}
+                        className="flex items-center space-x-3 cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors"
+                      >
+                        <RadioGroupItem value={time.id} id={time.id} className="h-5 w-5" />
+                        <Label htmlFor={time.id} className="text-base flex-1 cursor-pointer">
+                          {time.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </RadioGroup>
               </div>
 
               {/* Display selected day to the right of times */}
@@ -291,18 +282,12 @@ export function AvailabilityForm() {
                     )}
                   </div>
 
-                  {selectedTimes.length > 0 && (
+                  {selectedTime && (
                     <div className="pt-2 border-t">
-                      <p className="text-sm font-semibold mb-2">Selected Times:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {TIME_OPTIONS.filter((t) => selectedTimes.includes(t.id)).map(
-                          (time) => (
-                            <Badge key={time.id} variant="outline">
-                              {time.label}
-                            </Badge>
-                          )
-                        )}
-                      </div>
+                      <p className="text-sm font-semibold mb-2">Selected Time:</p>
+                      <Badge variant="outline">
+                        {TIME_OPTIONS.find((t) => t.id === selectedTime)?.label}
+                      </Badge>
                     </div>
                   )}
                 </div>
