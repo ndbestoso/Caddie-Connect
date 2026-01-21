@@ -35,10 +35,10 @@ export function AvailabilityForm() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [submittedDates, setSubmittedDates] = React.useState<Date[]>([]);
 
-  // Get current week's days
+  // Get current week's days (Sunday to Sunday)
   const getCurrentWeekDays = () => {
     const weekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
-    return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+    return Array.from({ length: 8 }, (_, i) => addDays(weekStart, i));
   };
 
   const weekDays = getCurrentWeekDays();
@@ -157,7 +157,7 @@ export function AvailabilityForm() {
               <h3 className="font-semibold text-lg text-card-foreground">
                 Select a Day (Current Week)
               </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-8 gap-3">
                 {weekDays.map((day) => {
                   const today = new Date();
                   today.setHours(0, 0, 0, 0);
