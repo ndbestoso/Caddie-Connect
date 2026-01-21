@@ -36,8 +36,25 @@ export function AvailabilityForm() {
   const [submittedDates, setSubmittedDates] = React.useState<Date[]>([]);
 
   // Get current week's days (Sunday to Sunday)
+  // Rotates to next week on Saturday at 15:00 EST
   const getCurrentWeekDays = () => {
-    const weekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
+    const now = new Date();
+
+    // Convert to EST/EDT (America/New_York timezone)
+    const estTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    const dayOfWeek = estTime.getDay(); // 0 = Sunday, 6 = Saturday
+    const hour = estTime.getHours();
+
+    // If it's Saturday (6) and time is >= 15:00 EST, show next week
+    const shouldShowNextWeek = dayOfWeek === 6 && hour >= 15;
+
+    let weekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
+
+    // If we should show next week, advance by 7 days
+    if (shouldShowNextWeek) {
+      weekStart = addDays(weekStart, 7);
+    }
+
     return Array.from({ length: 8 }, (_, i) => addDays(weekStart, i));
   };
 
