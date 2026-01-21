@@ -159,7 +159,9 @@ export function AvailabilityForm() {
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
                 {weekDays.map((day) => {
-                  const isPast = day < new Date(new Date().setHours(0, 0, 0, 0));
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const isPast = day < today;
                   const isSelected = selectedDate && isSameDay(day, selectedDate);
                   const isSubmitted = submittedDates.some((date) =>
                     format(date, "yyyy-MM-dd") === format(day, "yyyy-MM-dd")
