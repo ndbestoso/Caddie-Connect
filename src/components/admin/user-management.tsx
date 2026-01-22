@@ -39,6 +39,8 @@ import { Edit, Shield, User } from "lucide-react";
 interface UserData {
   id: string;
   email: string;
+  firstName?: string;
+  lastName?: string;
   role: 'caddie' | 'admin';
   createdAt: string;
   updatedAt: string;
@@ -52,7 +54,7 @@ export function UserManagement() {
   const [editDialogOpen, setEditDialogOpen] = React.useState(false);
   const [selectedUser, setSelectedUser] = React.useState<UserData | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [searchEmail, setSearchEmail] = React.useState("");
+  const [searchLastName, setSearchLastName] = React.useState("");
   const [newRole, setNewRole] = React.useState<'caddie' | 'admin'>('caddie');
 
   React.useEffect(() => {
@@ -127,7 +129,7 @@ export function UserManagement() {
   };
 
   const filteredUsers = users.filter((userData) =>
-    searchEmail ? userData.email.toLowerCase().includes(searchEmail.toLowerCase()) : true
+    searchLastName ? (userData.lastName || '').toLowerCase().includes(searchLastName.toLowerCase()) : true
   );
 
   return (
@@ -140,15 +142,16 @@ export function UserManagement() {
       </CardHeader>
       <CardContent className="space-y-4">
         <Input
-          placeholder="Search by email..."
-          value={searchEmail}
-          onChange={(e) => setSearchEmail(e.target.value)}
+          placeholder="Search by last name..."
+          value={searchLastName}
+          onChange={(e) => setSearchLastName(e.target.value)}
           className="max-w-sm h-10"
         />
         <div className="border rounded-lg overflow-hidden">
           <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Created At</TableHead>
@@ -160,13 +163,16 @@ export function UserManagement() {
                   filteredUsers.map((userData) => (
                     <TableRow key={userData.id}>
                       <TableCell className="font-medium">
-                        {userData.email}
+                        {userData.firstName || userData.lastName
+                          ? `${userData.firstName || ''} ${userData.lastName || ''}`.trim()
+                          : '—'}
                         {userData.id === user?.uid && (
                           <Badge variant="outline" className="ml-2">
                             You
                           </Badge>
                         )}
                       </TableCell>
+                      <TableCell>{userData.email}</TableCell>
                       <TableCell>
                         <Badge
                           variant={userData.role === 'admin' ? 'destructive' : 'secondary'}
@@ -203,10 +209,10 @@ export function UserManagement() {
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={4}
+                      colSpan={5}
                       className="h-24 text-center text-muted-foreground"
                     >
-                      {searchEmail
+                      {searchLastName
                         ? "No users found for this search."
                         : "No users yet."}
                     </TableCell>

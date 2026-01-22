@@ -28,7 +28,7 @@ interface AvailabilityData {
   userId: string;
   userEmail: string;
   date: string;
-  times: string[];
+  time: string;
   createdAt: string;
 }
 
@@ -39,7 +39,7 @@ export function AvailabilityManagement() {
 
   React.useEffect(() => {
     const availabilityRef = collection(db, "availability");
-    const q = query(availabilityRef, orderBy("date", "desc"));
+    const q = query(availabilityRef, orderBy("date", "asc"));
 
     const unsubscribe = onSnapshot(
       q,
@@ -115,13 +115,9 @@ export function AvailabilityManagement() {
                         {format(new Date(item.date), "EEE, MMM d, yyyy")}
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {item.times.map((time) => (
-                            <Badge key={time} variant="secondary">
-                              {time === "7am-9am" ? "7am - 9am" : time}
-                            </Badge>
-                          ))}
-                        </div>
+                        <Badge variant="secondary">
+                          {item.time === "7am-9am" ? "7am - 9am" : item.time}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right text-sm text-muted-foreground">
                         {format(new Date(item.createdAt), "MMM d, h:mm a")}
