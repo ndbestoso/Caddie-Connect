@@ -15,7 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, isSameDay } from "date-fns";
-import { CheckCircle2, CalendarCheck } from "lucide-react";
+import { CheckCircle2, CalendarCheck, Calendar as CalendarIcon } from "lucide-react";
 
 interface AssignmentData {
   id: string;
@@ -30,11 +30,19 @@ interface AvailabilityData {
   time: string;
 }
 
+interface EventData {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+}
+
 export function CalendarView() {
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(new Date());
   const [assignments, setAssignments] = React.useState<AssignmentData[]>([]);
   const [availabilities, setAvailabilities] = React.useState<AvailabilityData[]>([]);
+  const [events, setEvents] = React.useState<EventData[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   // Fetch assignments
@@ -97,11 +105,36 @@ export function CalendarView() {
     return unsubscribe;
   }, [user]);
 
+  // Fetch events
+  React.useEffect(() => {
+    const eventsRef = collection(db, "events");
+    const q = query(eventsRef, orderBy("date", "asc"));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const data = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as EventData[];
+        setEvents(data);
+      },
+      (error) => {
+        console.error("Error fetching events:", error);
+      }
+    );
+
+    return unsubscribe;
+  }, []);
+
   // Get dates with assignments
   const assignmentDates = assignments.map(a => new Date(a.date));
 
   // Get dates with availability
   const availabilityDates = availabilities.map(a => new Date(a.date));
+
+  // Get dates with events
+  const eventDates = events.map(e => new Date(e.date));
 
   // Get selected date details
   const selectedAssignments = selectedDate
@@ -110,6 +143,10 @@ export function CalendarView() {
 
   const selectedAvailability = selectedDate
     ? availabilities.filter(a => isSameDay(new Date(a.date), selectedDate))
+    : [];
+
+  const selectedEvents = selectedDate
+    ? events.filter(e => isSameDay(new Date(e.date), selectedDate))
     : [];
 
   if (loading) {
@@ -155,10 +192,12 @@ export function CalendarView() {
             modifiers={{
               assignment: assignmentDates,
               availability: availabilityDates,
+              event: eventDates,
             }}
             modifiersClassNames={{
               assignment: "bg-primary text-primary-foreground hover:bg-primary/90 font-bold",
               availability: "bg-green-500 text-white hover:bg-green-600",
+              event: "bg-orange-500 text-white hover:bg-orange-600",
             }}
           />
         </CardContent>
@@ -171,6 +210,10 @@ export function CalendarView() {
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded bg-green-500" />
               <span className="text-sm text-muted-foreground">Availability Submitted</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-orange-500" />
+              <span className="text-sm text-muted-foreground">Event</span>
             </div>
           </div>
         </CardContent>
@@ -221,10 +264,28 @@ export function CalendarView() {
               </div>
             )}
 
-            {/* No events */}
-            {selectedAssignments.length === 0 && selectedAvailability.length === 0 && selectedDate && (
+            {/* Events */}
+            {selectedEvents.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <CalendarIcon className="h-4 w-4 text-orange-600" />
+                  <h3 className="font-semibold">Events</h3>
+                </div>
+                {selectedEvents.map((event) => (
+                  <div key={event.id} className="p-3 border rounded-lg bg-orange-50 dark:bg-orange-950/20 space-y-2">
+                    <p className="text-sm font-medium text-orange-900 dark:text-orange-100">{event.title}</p>
+                    {event.description && (
+                      <p className="text-xs text-muted-foreground">{event.description}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* No items */}
+            {selectedAssignments.length === 0 && selectedAvailability.length === 0 && selectedEvents.length === 0 && selectedDate && (
               <div className="py-8 text-center text-muted-foreground">
-                <p>No assignments or availability for this date</p>
+                <p>No assignments, availability, or events for this date</p>
               </div>
             )}
           </CardContent>
