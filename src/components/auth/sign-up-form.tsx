@@ -40,8 +40,7 @@ export function SignUpForm({ onToggleForm }: SignUpFormProps) {
   async function onSubmit(data: SignUpFormData) {
     setIsLoading(true);
     try {
-      const fullName = `${data.firstName} ${data.lastName}`;
-      await signUp(data.email, data.password, fullName);
+      await signUp(data.email, data.password, data.firstName, data.lastName);
       toast({
         title: "Account created",
         description: "Welcome to Caddie Connect!",

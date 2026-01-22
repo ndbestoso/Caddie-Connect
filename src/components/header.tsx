@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LogOut, Shield } from "lucide-react";
+import { LogOut, Shield, User } from "lucide-react";
 import { GolfIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
@@ -30,9 +30,12 @@ export function Header() {
               </Button>
             </Link>
           )}
-          <span className="text-sm text-muted-foreground hidden md:inline">
-            {userName || user.email}
-          </span>
+          <Link href="/account">
+            <Button variant="ghost" size="sm" className="h-9 hidden md:flex">
+              <User className="h-4 w-4 mr-2" />
+              {userName || user.email}
+            </Button>
+          </Link>
           <Button variant="ghost" size="sm" onClick={signOut} className="h-9">
             <LogOut className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Sign Out</span>

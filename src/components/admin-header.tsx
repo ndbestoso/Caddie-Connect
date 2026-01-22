@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, LogOut, Shield } from "lucide-react";
+import { ArrowLeft, LogOut, Shield, User } from "lucide-react";
 import { GolfIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,9 +34,12 @@ export function AdminHeader() {
         </Link>
         {user && (
           <>
-            <span className="text-sm text-muted-foreground hidden lg:inline">
-              {userName || user.email}
-            </span>
+            <Link href="/account">
+              <Button variant="ghost" size="sm" className="h-9 hidden lg:flex">
+                <User className="h-4 w-4 mr-2" />
+                {userName || user.email}
+              </Button>
+            </Link>
             <Button variant="ghost" size="sm" onClick={signOut} className="h-9">
               <LogOut className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Sign Out</span>

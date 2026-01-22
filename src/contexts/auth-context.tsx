@@ -8,6 +8,10 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
   sendPasswordResetEmail,
+  updateEmail as firebaseUpdateEmail,
+  updatePassword as firebaseUpdatePassword,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
 } from "firebase/auth";
 import { doc, setDoc, onSnapshot, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
@@ -17,11 +21,15 @@ interface AuthContextType {
   loading: boolean;
   userRole: 'caddie' | 'admin' | null;
   userName: string | null;
+  userFirstName: string | null;
+  userLastName: string | null;
   roleLoading: boolean;
-  signUp: (email: string, password: string, name: string) => Promise<void>;
+  signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
+  updateEmail: (newEmail: string, currentPassword: string) => Promise<void>;
+  updatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +39,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = React.useState(true);
   const [userRole, setUserRole] = React.useState<'caddie' | 'admin' | null>(null);
   const [userName, setUserName] = React.useState<string | null>(null);
+  const [userFirstName, setUserFirstName] = React.useState<string | null>(null);
+  const [userLastName, setUserLastName] = React.useState<string | null>(null);
   const [roleLoading, setRoleLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -45,6 +55,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) {
       setUserRole(null);
       setUserName(null);
+      setUserFirstName(null);
+      setUserLastName(null);
       setRoleLoading(false);
       return;
     }
@@ -58,16 +70,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const data = docSnap.data();
           setUserRole(data.role || 'caddie');
           setUserName(data.name || null);
+          setUserFirstName(data.firstName || null);
+          setUserLastName(data.lastName || null);
         } else {
           await setDoc(userDocRef, {
             email: user.email,
             name: user.displayName || '',
+            firstName: '',
+            lastName: '',
             role: 'caddie',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           });
           setUserRole('caddie');
           setUserName(user.displayName || null);
+          setUserFirstName(null);
+          setUserLastName(null);
         }
         setRoleLoading(false);
       },
@@ -75,6 +93,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error("Error fetching user role:", error);
         setUserRole('caddie');
         setUserName(null);
+        setUserFirstName(null);
+        setUserLastName(null);
         setRoleLoading(false);
       }
     );
@@ -82,11 +102,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsubscribe;
   }, [user]);
 
-  const signUp = async (email: string, password: string, name: string) => {
+  const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     await setDoc(doc(db, "users", userCredential.user.uid), {
       email: email,
-      name: name,
+      name: `${firstName} ${lastName}`,
+      firstName: firstName,
+      lastName: lastName,
       role: 'caddie',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -120,8 +142,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateEmail = async (newEmail: string, currentPassword: string) => {
+    if (!user || !user.email) throw new Error("No user logged in");
+
+    try {
+      const credential = EmailAuthProvider.credential(user.email, currentPassword);
+      await reauthenticateWithCredential(user, credential);
+      await firebaseUpdateEmail(user, newEmail);
+      await setDoc(doc(db, "users", user.uid), { email: newEmail, updatedAt: new Date().toISOString() }, { merge: true });
+    } catch (error: any) {
+      const errorCode = error?.code;
+      switch (errorCode) {
+        case "auth/wrong-password":
+          throw new Error("Current password is incorrect");
+        case "auth/invalid-credential":
+          throw new Error("Current password is incorrect");
+        case "auth/email-already-in-use":
+          throw new Error("This email is already in use");
+        case "auth/invalid-email":
+          throw new Error("Invalid email address");
+        default:
+          throw error;
+      }
+    }
+  };
+
+  const updatePassword = async (currentPassword: string, newPassword: string) => {
+    if (!user || !user.email) throw new Error("No user logged in");
+
+    try {
+      const credential = EmailAuthProvider.credential(user.email, currentPassword);
+      await reauthenticateWithCredential(user, credential);
+      await firebaseUpdatePassword(user, newPassword);
+    } catch (error: any) {
+      const errorCode = error?.code;
+      switch (errorCode) {
+        case "auth/wrong-password":
+          throw new Error("Current password is incorrect");
+        case "auth/invalid-credential":
+          throw new Error("Current password is incorrect");
+        case "auth/weak-password":
+          throw new Error("New password is too weak");
+        default:
+          throw error;
+      }
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, userRole, userName, roleLoading, signUp, signIn, signOut, sendPasswordReset }}>
+    <AuthContext.Provider value={{ user, loading, userRole, userName, userFirstName, userLastName, roleLoading, signUp, signIn, signOut, sendPasswordReset, updateEmail, updatePassword }}>
       {children}
     </AuthContext.Provider>
   );
