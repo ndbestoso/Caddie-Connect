@@ -29,6 +29,8 @@ export function SignUpForm({ onToggleForm }: SignUpFormProps) {
   const form = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
+      firstName: "",
+      lastName: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -38,7 +40,8 @@ export function SignUpForm({ onToggleForm }: SignUpFormProps) {
   async function onSubmit(data: SignUpFormData) {
     setIsLoading(true);
     try {
-      await signUp(data.email, data.password);
+      const fullName = `${data.firstName} ${data.lastName}`;
+      await signUp(data.email, data.password, fullName);
       toast({
         title: "Account created",
         description: "Welcome to Caddie Connect!",
@@ -65,6 +68,44 @@ export function SignUpForm({ onToggleForm }: SignUpFormProps) {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="firstName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium">First Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="text"
+                      placeholder="John"
+                      className="h-11"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="lastName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium">Last Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="text"
+                      placeholder="Doe"
+                      className="h-11"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
           <FormField
             control={form.control}
             name="email"
