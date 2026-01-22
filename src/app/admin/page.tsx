@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, CalendarDays, Megaphone, ClipboardList } from "lucide-react";
+import { Users, CalendarDays, Megaphone, ClipboardList, CalendarCheck } from "lucide-react";
 import {
   Tabs,
   TabsContent,
@@ -12,6 +12,7 @@ import { AvailabilityManagement } from "@/components/admin/availability-manageme
 import { AssignmentManagement } from "@/components/admin/assignment-management";
 import { AnnouncementManagement } from "@/components/admin/announcement-management";
 import { UserManagement } from "@/components/admin/user-management";
+import { EventManagement } from "@/components/admin/event-management";
 
 export default function AdminPage() {
   return (
@@ -26,7 +27,7 @@ export default function AdminPage() {
         </div>
 
         <Tabs defaultValue="availability" className="w-full space-y-6">
-          <TabsList className="grid w-full grid-cols-4 h-12 bg-muted/50">
+          <TabsList className="grid w-full grid-cols-5 h-12 bg-muted/50">
             <TabsTrigger value="availability" className="text-sm data-[state=active]:bg-background">
               <CalendarDays className="mr-2 h-4 w-4" />
               <span className="hidden sm:inline">Availability</span>
@@ -34,6 +35,10 @@ export default function AdminPage() {
             <TabsTrigger value="assignments" className="text-sm data-[state=active]:bg-background">
               <ClipboardList className="mr-2 h-4 w-4" />
               <span className="hidden sm:inline">Assignments</span>
+            </TabsTrigger>
+            <TabsTrigger value="events" className="text-sm data-[state=active]:bg-background">
+              <CalendarCheck className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Events</span>
             </TabsTrigger>
             <TabsTrigger value="announcements" className="text-sm data-[state=active]:bg-background">
               <Megaphone className="mr-2 h-4 w-4" />
@@ -49,6 +54,9 @@ export default function AdminPage() {
           </TabsContent>
           <TabsContent value="assignments" className="mt-0 space-y-4">
             <AssignmentManagement />
+          </TabsContent>
+          <TabsContent value="events" className="mt-0 space-y-4">
+            <EventManagement />
           </TabsContent>
           <TabsContent value="announcements" className="mt-0 space-y-4">
             <AnnouncementManagement />

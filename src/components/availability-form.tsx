@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { format, startOfWeek, addDays, isSameDay, isToday } from "date-fns";
-import { collection, addDoc, query, where, onSnapshot } from "firebase/firestore";
+import { collection, addDoc, query, where, onSnapshot, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -18,6 +18,14 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { CalendarCheck } from "lucide-react";
+
+interface EventData {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+}
 
 const TIME_OPTIONS = [
   { id: "7am-9am", label: "7am - 9am" },
@@ -35,6 +43,8 @@ export function AvailabilityForm() {
   const [selectedTime, setSelectedTime] = React.useState<string>("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [submittedDates, setSubmittedDates] = React.useState<Date[]>([]);
+  const [availabilityData, setAvailabilityData] = React.useState<Record<string, string>>({});
+  const [events, setEvents] = React.useState<EventData[]>([]);
 
   // Get current week's days (Sunday to Sunday)
   // Rotates to next week on Saturday at 15:00 EST
@@ -75,6 +85,15 @@ export function AvailabilityForm() {
       (snapshot) => {
         const dates = snapshot.docs.map((doc) => new Date(doc.data().date));
         setSubmittedDates(dates);
+
+        // Store availability data with date as key and time as value
+        const availData: Record<string, string> = {};
+        snapshot.docs.forEach((doc) => {
+          const data = doc.data();
+          const dateKey = format(new Date(data.date), "yyyy-MM-dd");
+          availData[dateKey] = data.time || "";
+        });
+        setAvailabilityData(availData);
       },
       (error) => {
         console.error("Error fetching availability:", error);
@@ -89,10 +108,44 @@ export function AvailabilityForm() {
     return () => unsubscribe();
   }, [user, toast]);
 
+  // Fetch events
+  React.useEffect(() => {
+    const eventsRef = collection(db, "events");
+    const q = query(eventsRef, orderBy("date", "asc"));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const data = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as EventData[];
+        setEvents(data);
+      },
+      (error) => {
+        console.error("Error fetching events:", error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
   // Filter submitted dates: locked if passed or within 8 hours
   const now = new Date();
   const eightHoursFromNow = new Date(now.getTime() + 8 * 60 * 60 * 1000);
   const lockedDates = submittedDates.filter((date) => date <= eightHoursFromNow || date < now);
+
+  const handleDateClick = (date: Date) => {
+    setSelectedDate(date);
+    // Check if this date has existing availability data
+    const dateKey = format(date, "yyyy-MM-dd");
+    const existingTime = availabilityData[dateKey];
+    if (existingTime) {
+      setSelectedTime(existingTime);
+    } else {
+      setSelectedTime("");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -185,7 +238,7 @@ export function AvailabilityForm() {
                       key={day.toISOString()}
                       type="button"
                       disabled={isPast}
-                      onClick={() => setSelectedDate(day)}
+                      onClick={() => handleDateClick(day)}
                       className={cn(
                         "flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all",
                         "hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none",
@@ -248,7 +301,12 @@ export function AvailabilityForm() {
                 <h3 className="font-semibold text-card-foreground">
                   Selected Day
                 </h3>
-                <div className="rounded-md border p-4 bg-muted/50 space-y-4">
+                <div className={cn(
+                  "rounded-xl border-2 p-6 space-y-4 transition-all shadow-lg",
+                  selectedTime
+                    ? "bg-green-50 border-green-400 shadow-green-200/50"
+                    : "bg-red-50 border-red-400 shadow-red-200/50"
+                )}>
                   <div>
                     <p className="text-sm text-muted-foreground mb-2">Day:</p>
                     <Badge variant="secondary" className="text-base">
@@ -256,31 +314,30 @@ export function AvailabilityForm() {
                     </Badge>
                   </div>
 
-                  {/* Show status of the day */}
-                  <div className="pt-2 border-t">
-                    <p className="text-sm font-semibold mb-2">Day Status:</p>
-                    {submittedDates.some(
-                      (date) => format(date, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd")
-                    ) ? (
-                      <div className="space-y-2">
-                        {lockedDates.some(
-                          (date) => format(date, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd")
-                        ) ? (
-                          <p className="text-sm text-muted-foreground">
-                            ✓ Availability submitted (Locked - within 8 hours or passed)
-                          </p>
-                        ) : (
-                          <p className="text-sm text-green-600">
-                            ✓ Availability already submitted for this day
-                          </p>
-                        )}
+                  {/* Events for selected day */}
+                  {(() => {
+                    const dayEvents = events.filter(
+                      (event) => format(new Date(event.date), "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd")
+                    );
+                    return dayEvents.length > 0 ? (
+                      <div className="pt-2 border-t">
+                        <p className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+                          <CalendarCheck className="h-4 w-4" />
+                          Events:
+                        </p>
+                        <div className="space-y-2">
+                          {dayEvents.map((event) => (
+                            <div key={event.id} className="bg-white/60 rounded-md p-2">
+                              <p className="font-medium text-sm">{event.title}</p>
+                              {event.description && (
+                                <p className="text-xs text-muted-foreground mt-0.5">{event.description}</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        No availability submitted yet
-                      </p>
-                    )}
-                  </div>
+                    ) : null;
+                  })()}
 
                   {selectedTime && (
                     <div className="pt-2 border-t">
