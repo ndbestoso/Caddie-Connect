@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/auth-context";
 
 export function AdminHeader() {
-  const { signOut, user } = useAuth();
+  const { signOut, user, userName } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center justify-between gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 md:px-8">
@@ -35,7 +35,7 @@ export function AdminHeader() {
         {user && (
           <>
             <span className="text-sm text-muted-foreground hidden lg:inline">
-              {user.email}
+              {userName || user.email}
             </span>
             <Button variant="ghost" size="sm" onClick={signOut} className="h-9">
               <LogOut className="h-4 w-4 mr-2" />

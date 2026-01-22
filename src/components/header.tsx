@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 
 export function Header() {
-  const { signOut, user } = useAuth();
+  const { signOut, user, userName } = useAuth();
   const { isAdmin } = useIsAdmin();
 
   return (
@@ -31,7 +31,7 @@ export function Header() {
             </Link>
           )}
           <span className="text-sm text-muted-foreground hidden md:inline">
-            {user.email}
+            {userName || user.email}
           </span>
           <Button variant="ghost" size="sm" onClick={signOut} className="h-9">
             <LogOut className="h-4 w-4 mr-2" />

@@ -16,8 +16,9 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   userRole: 'caddie' | 'admin' | null;
+  userName: string | null;
   roleLoading: boolean;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
@@ -29,6 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [userRole, setUserRole] = React.useState<'caddie' | 'admin' | null>(null);
+  const [userName, setUserName] = React.useState<string | null>(null);
   const [roleLoading, setRoleLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -42,6 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     if (!user) {
       setUserRole(null);
+      setUserName(null);
       setRoleLoading(false);
       return;
     }
@@ -52,21 +55,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       userDocRef,
       async (docSnap) => {
         if (docSnap.exists()) {
-          setUserRole(docSnap.data().role || 'caddie');
+          const data = docSnap.data();
+          setUserRole(data.role || 'caddie');
+          setUserName(data.name || null);
         } else {
           await setDoc(userDocRef, {
             email: user.email,
+            name: user.displayName || '',
             role: 'caddie',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           });
           setUserRole('caddie');
+          setUserName(user.displayName || null);
         }
         setRoleLoading(false);
       },
       (error) => {
         console.error("Error fetching user role:", error);
         setUserRole('caddie');
+        setUserName(null);
         setRoleLoading(false);
       }
     );
@@ -74,10 +82,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsubscribe;
   }, [user]);
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, name: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     await setDoc(doc(db, "users", userCredential.user.uid), {
       email: email,
+      name: name,
       role: 'caddie',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -112,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, userRole, roleLoading, signUp, signIn, signOut, sendPasswordReset }}>
+    <AuthContext.Provider value={{ user, loading, userRole, userName, roleLoading, signUp, signIn, signOut, sendPasswordReset }}>
       {children}
     </AuthContext.Provider>
   );
