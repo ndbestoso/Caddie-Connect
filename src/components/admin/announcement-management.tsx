@@ -44,7 +44,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Archive, ArchiveRestore } from "lucide-react";
+import { Plus, Edit, Trash2, Archive, ArchiveRestore, Type, Palette } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface AnnouncementData {
   id: string;
@@ -67,12 +74,25 @@ export function AnnouncementManagement() {
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] = React.useState<AnnouncementData | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  const editContentRef = React.useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = React.useState({
     title: "",
     content: "",
     date: format(new Date(), "yyyy-MM-dd"),
   });
+
+  const applyFormatting = (command: string, value?: string) => {
+    const editor = createDialogOpen ? contentRef.current : editContentRef.current;
+    if (editor) {
+      editor.focus();
+      document.execCommand(command, false, value);
+      if (createDialogOpen) {
+        setFormData({ ...formData, content: editor.innerHTML });
+      }
+    }
+  };
 
   React.useEffect(() => {
     const announcementsRef = collection(db, "announcements");
@@ -125,6 +145,9 @@ export function AnnouncementManagement() {
 
       setCreateDialogOpen(false);
       setFormData({ title: "", content: "", date: format(new Date(), "yyyy-MM-dd") });
+      if (contentRef.current) {
+        contentRef.current.innerHTML = "";
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -268,13 +291,43 @@ export function AnnouncementManagement() {
                     <label htmlFor="content" className="text-sm font-medium">
                       Content
                     </label>
-                    <Textarea
-                      id="content"
-                      value={formData.content}
-                      onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                      rows={5}
-                      required
-                    />
+                    <div className="space-y-2">
+                      <div className="flex gap-2 p-2 border rounded-md bg-muted/50">
+                        <Select onValueChange={(value) => applyFormatting('fontSize', value)}>
+                          <SelectTrigger className="w-[140px] h-8">
+                            <Type className="h-3 w-3 mr-2" />
+                            <SelectValue placeholder="Size" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">Small</SelectItem>
+                            <SelectItem value="3">Normal</SelectItem>
+                            <SelectItem value="5">Large</SelectItem>
+                            <SelectItem value="7">Extra Large</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Select onValueChange={(value) => applyFormatting('foreColor', value)}>
+                          <SelectTrigger className="w-[140px] h-8">
+                            <Palette className="h-3 w-3 mr-2" />
+                            <SelectValue placeholder="Color" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="#000000">Black</SelectItem>
+                            <SelectItem value="#ef4444">Red</SelectItem>
+                            <SelectItem value="#3b82f6">Blue</SelectItem>
+                            <SelectItem value="#22c55e">Green</SelectItem>
+                            <SelectItem value="#f59e0b">Orange</SelectItem>
+                            <SelectItem value="#8b5cf6">Purple</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div
+                        ref={contentRef}
+                        contentEditable
+                        className="min-h-[120px] p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                        onInput={(e) => setFormData({ ...formData, content: e.currentTarget.innerHTML })}
+                        suppressContentEditableWarning
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="date" className="text-sm font-medium">
@@ -396,13 +449,44 @@ export function AnnouncementManagement() {
                 <label htmlFor="edit-content" className="text-sm font-medium">
                   Content
                 </label>
-                <Textarea
-                  id="edit-content"
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  rows={5}
-                  required
-                />
+                <div className="space-y-2">
+                  <div className="flex gap-2 p-2 border rounded-md bg-muted/50">
+                    <Select onValueChange={(value) => applyFormatting('fontSize', value)}>
+                      <SelectTrigger className="w-[140px] h-8">
+                        <Type className="h-3 w-3 mr-2" />
+                        <SelectValue placeholder="Size" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Small</SelectItem>
+                        <SelectItem value="3">Normal</SelectItem>
+                        <SelectItem value="5">Large</SelectItem>
+                        <SelectItem value="7">Extra Large</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select onValueChange={(value) => applyFormatting('foreColor', value)}>
+                      <SelectTrigger className="w-[140px] h-8">
+                        <Palette className="h-3 w-3 mr-2" />
+                        <SelectValue placeholder="Color" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="#000000">Black</SelectItem>
+                        <SelectItem value="#ef4444">Red</SelectItem>
+                        <SelectItem value="#3b82f6">Blue</SelectItem>
+                        <SelectItem value="#22c55e">Green</SelectItem>
+                        <SelectItem value="#f59e0b">Orange</SelectItem>
+                        <SelectItem value="#8b5cf6">Purple</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div
+                    ref={editContentRef}
+                    contentEditable
+                    className="min-h-[120px] p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                    dangerouslySetInnerHTML={{ __html: formData.content }}
+                    onInput={(e) => setFormData({ ...formData, content: e.currentTarget.innerHTML })}
+                    suppressContentEditableWarning
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <label htmlFor="edit-date" className="text-sm font-medium">

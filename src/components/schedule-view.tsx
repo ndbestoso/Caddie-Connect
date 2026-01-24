@@ -97,9 +97,8 @@ export function ScheduleView() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[150px]">Date</TableHead>
-                <TableHead className="w-[120px]">Time</TableHead>
+                <TableHead className="w-[140px]">Arrival Time</TableHead>
                 <TableHead>Notes</TableHead>
-                <TableHead className="text-right">Assignment</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -111,26 +110,12 @@ export function ScheduleView() {
                     </TableCell>
                     <TableCell>{item.time}</TableCell>
                     <TableCell>{item.notes}</TableCell>
-                    <TableCell className="text-right">
-                      <Badge
-                        variant={
-                          item.assignment === "Forecaddie"
-                            ? "default"
-                            : item.assignment === "Single Bag"
-                            ? "secondary"
-                            : "outline"
-                        }
-                        className="capitalize"
-                      >
-                        {item.assignment}
-                      </Badge>
-                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={4}
+                    colSpan={3}
                     className="h-24 text-center text-muted-foreground"
                   >
                     You have no assignments at this time.

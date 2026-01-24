@@ -46,8 +46,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -89,7 +87,6 @@ export function AssignmentManagement() {
     date: format(new Date(), "yyyy-MM-dd"),
     time: "",
     notes: "",
-    assignment: "Single Bag" as 'Forecaddie' | 'Single Bag' | 'Double Bag',
   });
 
   React.useEffect(() => {
@@ -158,7 +155,6 @@ export function AssignmentManagement() {
         date: new Date(formData.date).toISOString(),
         time: formData.time,
         notes: formData.notes,
-        assignment: formData.assignment,
         createdBy: user.uid,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -175,7 +171,6 @@ export function AssignmentManagement() {
         date: format(new Date(), "yyyy-MM-dd"),
         time: "",
         notes: "",
-        assignment: "Single Bag",
       });
     } catch (error: any) {
       toast({
@@ -275,7 +270,7 @@ export function AssignmentManagement() {
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="time" className="text-sm font-medium">
-                      Time
+                      Arrival Time
                     </label>
                     <Input
                       id="time"
@@ -299,28 +294,6 @@ export function AssignmentManagement() {
                       required
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">
-                      Assignment Type
-                    </label>
-                    <RadioGroup
-                      value={formData.assignment}
-                      onValueChange={(value: any) => setFormData({ ...formData, assignment: value })}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="Forecaddie" id="forecaddie" />
-                        <Label htmlFor="forecaddie">Forecaddie</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="Single Bag" id="single" />
-                        <Label htmlFor="single">Single Bag</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="Double Bag" id="double" />
-                        <Label htmlFor="double">Double Bag</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
                 </div>
                 <DialogFooter>
                   <Button type="submit" disabled={isSubmitting || !formData.caddieId}>
@@ -339,9 +312,8 @@ export function AssignmentManagement() {
               <TableRow>
                 <TableHead>Caddie</TableHead>
                 <TableHead>Date</TableHead>
-                <TableHead>Time</TableHead>
+                <TableHead>Arrival Time</TableHead>
                 <TableHead>Notes</TableHead>
-                <TableHead>Type</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -357,19 +329,6 @@ export function AssignmentManagement() {
                     </TableCell>
                     <TableCell>{assignment.time}</TableCell>
                     <TableCell>{assignment.notes}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          assignment.assignment === "Forecaddie"
-                            ? "default"
-                            : assignment.assignment === "Single Bag"
-                            ? "secondary"
-                            : "outline"
-                        }
-                      >
-                        {assignment.assignment}
-                      </Badge>
-                    </TableCell>
                     <TableCell className="text-right">
                       <Button
                         variant="ghost"
@@ -384,7 +343,7 @@ export function AssignmentManagement() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={5}
                     className="h-24 text-center text-muted-foreground"
                   >
                     No assignments yet. Create your first assignment.

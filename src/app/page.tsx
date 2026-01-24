@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, ListChecks, Megaphone } from "lucide-react";
+import { CalendarDays, ListChecks, Megaphone, Calendar } from "lucide-react";
 
 import {
   Tabs,
@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Header } from "@/components/header";
 import { AvailabilityForm } from "@/components/availability-form";
 import { ScheduleView } from "@/components/schedule-view";
+import { CalendarView } from "@/components/calendar-view";
 import { Announcements } from "@/components/announcements";
 import { AuthForms } from "@/components/auth";
 import { useAuth } from "@/contexts/auth-context";
@@ -43,18 +44,22 @@ export default function Home() {
       <Header />
       <main className="flex flex-1 flex-col gap-6 p-6 md:gap-8 md:p-8 lg:p-10 max-w-[1400px] mx-auto w-full">
         <Tabs defaultValue="availability" className="w-full space-y-6">
-          <TabsList className="grid w-full grid-cols-3 h-12 bg-muted/50">
+          <TabsList className="grid w-full grid-cols-4 h-12 bg-muted/50">
             <TabsTrigger value="availability" className="text-sm data-[state=active]:bg-background">
               <CalendarDays className="mr-2 h-4 w-4" />
-              Availability
+              <span className="hidden sm:inline">Availability</span>
             </TabsTrigger>
             <TabsTrigger value="schedule" className="text-sm data-[state=active]:bg-background">
               <ListChecks className="mr-2 h-4 w-4" />
-              Schedule
+              <span className="hidden sm:inline">Schedule</span>
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="text-sm data-[state=active]:bg-background">
+              <Calendar className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Calendar</span>
             </TabsTrigger>
             <TabsTrigger value="announcements" className="text-sm data-[state=active]:bg-background">
               <Megaphone className="mr-2 h-4 w-4" />
-              Announcements
+              <span className="hidden sm:inline">Announcements</span>
             </TabsTrigger>
           </TabsList>
           <TabsContent value="availability" className="mt-0 flex justify-center">
@@ -64,6 +69,9 @@ export default function Home() {
           </TabsContent>
           <TabsContent value="schedule" className="mt-0">
             <ScheduleView />
+          </TabsContent>
+          <TabsContent value="calendar" className="mt-0">
+            <CalendarView />
           </TabsContent>
           <TabsContent value="announcements" className="mt-0">
             <Announcements />
