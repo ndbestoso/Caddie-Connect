@@ -195,11 +195,79 @@ export function CalendarView() {
               event: eventDates,
             }}
             modifiersClassNames={{
-              assignment: "bg-primary text-primary-foreground hover:bg-primary/90 font-bold",
-              availability: "bg-green-500 text-white hover:bg-green-600",
-              event: "bg-orange-500 text-white hover:bg-orange-600",
+              assignment: "has-assignment",
+              availability: "has-availability",
+              event: "has-event",
             }}
           />
+          <style jsx global>{`
+            .has-assignment,
+            .has-availability,
+            .has-event {
+              position: relative;
+            }
+            .has-assignment::after,
+            .has-availability::after,
+            .has-event::after {
+              content: '';
+              position: absolute;
+              bottom: 2px;
+              width: 6px;
+              height: 6px;
+              border-radius: 50%;
+            }
+            .has-assignment::after {
+              background-color: hsl(var(--primary));
+              left: calc(50% - 3px);
+            }
+            .has-availability::after {
+              background-color: #22c55e;
+              left: calc(50% - 3px);
+            }
+            .has-event::after {
+              background-color: #f97316;
+              left: calc(50% - 3px);
+            }
+            .has-assignment.has-availability::after {
+              left: calc(50% - 8px);
+            }
+            .has-assignment.has-availability::before {
+              content: '';
+              position: absolute;
+              bottom: 2px;
+              left: calc(50% + 2px);
+              width: 6px;
+              height: 6px;
+              border-radius: 50%;
+              background-color: #22c55e;
+            }
+            .has-assignment.has-event::after {
+              left: calc(50% - 8px);
+            }
+            .has-assignment.has-event::before {
+              content: '';
+              position: absolute;
+              bottom: 2px;
+              left: calc(50% + 2px);
+              width: 6px;
+              height: 6px;
+              border-radius: 50%;
+              background-color: #f97316;
+            }
+            .has-availability.has-event::after {
+              left: calc(50% - 8px);
+            }
+            .has-availability.has-event::before {
+              content: '';
+              position: absolute;
+              bottom: 2px;
+              left: calc(50% + 2px);
+              width: 6px;
+              height: 6px;
+              border-radius: 50%;
+              background-color: #f97316;
+            }
+          `}</style>
         </CardContent>
         <CardContent className="pt-4 border-t">
           <div className="flex gap-4 justify-center flex-wrap">

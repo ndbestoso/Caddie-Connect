@@ -36,10 +36,10 @@ function Calendar({
         head_cell:
           "text-muted-foreground rounded-md font-normal text-[0.8rem]",
         row: "mt-2",
-        cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 [&:has(button:disabled)]:pointer-events-none",
+        cell: "h-12 w-12 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 [&:has(button:disabled)]:pointer-events-none",
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 disabled:pointer-events-none disabled:hover:bg-transparent disabled:bg-transparent"
+          "h-12 w-12 p-0 font-normal aria-selected:opacity-100 disabled:pointer-events-none disabled:hover:bg-transparent disabled:bg-transparent"
         ),
         day_range_end: "day-range-end",
         day_selected:
