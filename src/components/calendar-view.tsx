@@ -5,6 +5,7 @@ import { collection, query, where, orderBy, onSnapshot } from "firebase/firestor
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/auth-context";
 import { Calendar } from "@/components/ui/calendar";
+import { DayButton as DayButtonType } from "react-day-picker";
 import {
   Card,
   CardContent,
@@ -136,6 +137,35 @@ export function CalendarView() {
   // Get dates with events
   const eventDates = events.map(e => new Date(e.date));
 
+  // Helper functions to check date types
+  const hasAssignment = (date: Date) => assignmentDates.some(d => isSameDay(d, date));
+  const hasAvailability = (date: Date) => availabilityDates.some(d => isSameDay(d, date));
+  const hasEvent = (date: Date) => eventDates.some(d => isSameDay(d, date));
+
+  // Custom DayButton component with indicator dots
+  const CustomDayButton: typeof DayButtonType = ({ day, modifiers, ...props }) => {
+    const date = day.date;
+    const isAssignment = hasAssignment(date);
+    const isAvailability = hasAvailability(date);
+    const isEvent = hasEvent(date);
+    const hasIndicators = isAssignment || isAvailability || isEvent;
+
+    return (
+      <button {...props}>
+        <span className="flex flex-col items-center justify-center h-full">
+          <span>{date.getDate()}</span>
+          {hasIndicators && (
+            <span className="flex gap-0.5 absolute bottom-1">
+              {isAssignment && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+              {isAvailability && <span className="w-1.5 h-1.5 rounded-full bg-green-500" />}
+              {isEvent && <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />}
+            </span>
+          )}
+        </span>
+      </button>
+    );
+  };
+
   // Get selected date details
   const selectedAssignments = selectedDate
     ? assignments.filter(a => isSameDay(new Date(a.date), selectedDate))
@@ -189,85 +219,10 @@ export function CalendarView() {
             selected={selectedDate}
             onSelect={setSelectedDate}
             className="rounded-lg border"
-            modifiers={{
-              assignment: assignmentDates,
-              availability: availabilityDates,
-              event: eventDates,
-            }}
-            modifiersClassNames={{
-              assignment: "has-assignment",
-              availability: "has-availability",
-              event: "has-event",
+            components={{
+              DayButton: CustomDayButton,
             }}
           />
-          <style jsx global>{`
-            .has-assignment,
-            .has-availability,
-            .has-event {
-              position: relative;
-            }
-            .has-assignment::after,
-            .has-availability::after,
-            .has-event::after {
-              content: '';
-              position: absolute;
-              bottom: 2px;
-              width: 6px;
-              height: 6px;
-              border-radius: 50%;
-            }
-            .has-assignment::after {
-              background-color: hsl(var(--primary));
-              left: calc(50% - 3px);
-            }
-            .has-availability::after {
-              background-color: #22c55e;
-              left: calc(50% - 3px);
-            }
-            .has-event::after {
-              background-color: #f97316;
-              left: calc(50% - 3px);
-            }
-            .has-assignment.has-availability::after {
-              left: calc(50% - 8px);
-            }
-            .has-assignment.has-availability::before {
-              content: '';
-              position: absolute;
-              bottom: 2px;
-              left: calc(50% + 2px);
-              width: 6px;
-              height: 6px;
-              border-radius: 50%;
-              background-color: #22c55e;
-            }
-            .has-assignment.has-event::after {
-              left: calc(50% - 8px);
-            }
-            .has-assignment.has-event::before {
-              content: '';
-              position: absolute;
-              bottom: 2px;
-              left: calc(50% + 2px);
-              width: 6px;
-              height: 6px;
-              border-radius: 50%;
-              background-color: #f97316;
-            }
-            .has-availability.has-event::after {
-              left: calc(50% - 8px);
-            }
-            .has-availability.has-event::before {
-              content: '';
-              position: absolute;
-              bottom: 2px;
-              left: calc(50% + 2px);
-              width: 6px;
-              height: 6px;
-              border-radius: 50%;
-              background-color: #f97316;
-            }
-          `}</style>
         </CardContent>
         <CardContent className="pt-4 border-t">
           <div className="flex gap-4 justify-center flex-wrap">
