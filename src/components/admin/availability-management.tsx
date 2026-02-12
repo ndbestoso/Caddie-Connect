@@ -4,6 +4,7 @@ import * as React from "react";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { format } from "date-fns";
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -20,8 +21,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+
+type SortColumn = "name" | "date";
+type SortDirection = "asc" | "desc";
 
 interface AvailabilityData {
   id: string;
@@ -32,10 +37,18 @@ interface AvailabilityData {
   createdAt: string;
 }
 
+interface UserData {
+  firstName?: string;
+  lastName?: string;
+}
+
 export function AvailabilityManagement() {
   const [availabilities, setAvailabilities] = React.useState<AvailabilityData[]>([]);
+  const [users, setUsers] = React.useState<Record<string, UserData>>({});
   const [loading, setLoading] = React.useState(true);
-  const [searchEmail, setSearchEmail] = React.useState("");
+  const [searchName, setSearchName] = React.useState("");
+  const [sortColumn, setSortColumn] = React.useState<SortColumn>("date");
+  const [sortDirection, setSortDirection] = React.useState<SortDirection>("asc");
 
   React.useEffect(() => {
     const availabilityRef = collection(db, "availability");
@@ -60,9 +73,68 @@ export function AvailabilityManagement() {
     return unsubscribe;
   }, []);
 
-  const filteredAvailabilities = availabilities.filter((item) =>
-    searchEmail ? item.userEmail.toLowerCase().includes(searchEmail.toLowerCase()) : true
-  );
+  React.useEffect(() => {
+    const usersRef = collection(db, "users");
+    const unsubscribe = onSnapshot(
+      usersRef,
+      (snapshot) => {
+        const userData: Record<string, UserData> = {};
+        snapshot.docs.forEach(doc => {
+          userData[doc.id] = doc.data() as UserData;
+        });
+        setUsers(userData);
+      },
+      (error) => {
+        console.error("Error fetching users:", error);
+      }
+    );
+
+    return unsubscribe;
+  }, []);
+
+  const getUserName = (userId: string, email: string) => {
+    const user = users[userId];
+    if (user && (user.firstName || user.lastName)) {
+      return `${user.firstName || ''} ${user.lastName || ''}`.trim();
+    }
+    return email;
+  };
+
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const getSortIcon = (column: SortColumn) => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="ml-2 h-4 w-4" />;
+    }
+    return sortDirection === "asc"
+      ? <ArrowUp className="ml-2 h-4 w-4" />
+      : <ArrowDown className="ml-2 h-4 w-4" />;
+  };
+
+  const filteredAndSortedAvailabilities = availabilities
+    .filter((item) => {
+      if (!searchName) return true;
+      const name = getUserName(item.userId, item.userEmail);
+      return name.toLowerCase().includes(searchName.toLowerCase());
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+      if (sortColumn === "name") {
+        const nameA = getUserName(a.userId, a.userEmail).toLowerCase();
+        const nameB = getUserName(b.userId, b.userEmail).toLowerCase();
+        comparison = nameA.localeCompare(nameB);
+      } else if (sortColumn === "date") {
+        comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+      }
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
 
   if (loading) {
     return (
@@ -89,27 +161,45 @@ export function AvailabilityManagement() {
       </CardHeader>
       <CardContent className="space-y-4">
         <Input
-          placeholder="Search by email..."
-          value={searchEmail}
-          onChange={(e) => setSearchEmail(e.target.value)}
+          placeholder="Search by name..."
+          value={searchName}
+          onChange={(e) => setSearchName(e.target.value)}
           className="max-w-sm h-10"
         />
         <div className="border rounded-lg overflow-hidden">
           <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Caddie Email</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead>
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort("name")}
+                      className="h-8 px-2 -ml-2 font-medium"
+                    >
+                      Caddie Name
+                      {getSortIcon("name")}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort("date")}
+                      className="h-8 px-2 -ml-2 font-medium"
+                    >
+                      Date
+                      {getSortIcon("date")}
+                    </Button>
+                  </TableHead>
                   <TableHead>Time Preferences</TableHead>
                   <TableHead className="text-right">Submitted At</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredAvailabilities.length > 0 ? (
-                  filteredAvailabilities.map((item) => (
+                {filteredAndSortedAvailabilities.length > 0 ? (
+                  filteredAndSortedAvailabilities.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">
-                        {item.userEmail}
+                        {getUserName(item.userId, item.userEmail)}
                       </TableCell>
                       <TableCell>
                         {format(new Date(item.date), "EEE, MMM d, yyyy")}
@@ -130,7 +220,7 @@ export function AvailabilityManagement() {
                       colSpan={4}
                       className="h-24 text-center text-muted-foreground"
                     >
-                      {searchEmail
+                      {searchName
                         ? "No availability found for this search."
                         : "No availability submissions yet."}
                     </TableCell>

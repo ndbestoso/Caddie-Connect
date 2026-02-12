@@ -143,25 +143,29 @@ export function CalendarView() {
   const hasEvent = (date: Date) => eventDates.some(d => isSameDay(d, date));
 
   // Custom DayButton component with indicator dots
-  const CustomDayButton: typeof DayButtonType = ({ day, modifiers, ...props }) => {
+  const CustomDayButton: typeof DayButtonType = ({ day, modifiers, className, ...props }) => {
     const date = day.date;
     const isAssignment = hasAssignment(date);
     const isAvailability = hasAvailability(date);
     const isEvent = hasEvent(date);
     const hasIndicators = isAssignment || isAvailability || isEvent;
+    const isSelected = selectedDate && isSameDay(date, selectedDate);
 
     return (
-      <button {...props}>
-        <span className="flex flex-col items-center justify-center h-full">
-          <span>{date.getDate()}</span>
-          {hasIndicators && (
-            <span className="flex gap-0.5 absolute bottom-1">
-              {isAssignment && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
-              {isAvailability && <span className="w-1.5 h-1.5 rounded-full bg-green-500" />}
-              {isEvent && <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />}
-            </span>
-          )}
-        </span>
+      <button
+        {...props}
+        className={`${className || ""} !relative !h-full !w-full flex flex-col items-center justify-center active:scale-95 transition-transform rounded-xl ${
+          isSelected ? "bg-primary text-primary-foreground hover:bg-primary" : ""
+        }`}
+      >
+        <span>{date.getDate()}</span>
+        {hasIndicators && (
+          <span className="flex gap-0.5 mt-0.5">
+            {isAssignment && <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-primary-foreground" : "bg-primary"}`} />}
+            {isAvailability && <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-green-200" : "bg-green-500"}`} />}
+            {isEvent && <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-orange-200" : "bg-orange-500"}`} />}
+          </span>
+        )}
       </button>
     );
   };
@@ -181,7 +185,7 @@ export function CalendarView() {
 
   if (loading) {
     return (
-      <div className="grid gap-6 md:grid-cols-[1fr_400px]">
+      <div className="grid gap-3 md:grid-cols-[auto_1fr]">
         <Card className="border-none shadow-sm">
           <CardHeader className="pb-4">
             <Skeleton className="h-8 w-48" />
@@ -204,7 +208,7 @@ export function CalendarView() {
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-[1fr_400px]">
+    <div className="grid gap-3 md:grid-cols-[auto_1fr]">
       {/* Calendar */}
       <Card className="border-none shadow-sm">
         <CardHeader className="pb-4">
@@ -217,7 +221,7 @@ export function CalendarView() {
           <Calendar
             mode="single"
             selected={selectedDate}
-            onSelect={setSelectedDate}
+            onSelect={(date) => date && setSelectedDate(date)}
             className="rounded-lg border"
             components={{
               DayButton: CustomDayButton,
@@ -295,10 +299,10 @@ export function CalendarView() {
                   <h3 className="font-semibold">Events</h3>
                 </div>
                 {selectedEvents.map((event) => (
-                  <div key={event.id} className="p-3 border rounded-lg bg-orange-50 dark:bg-orange-950/20 space-y-2">
-                    <p className="text-sm font-medium text-orange-900 dark:text-orange-100">{event.title}</p>
+                  <div key={event.id} className="p-4 border rounded-lg bg-orange-50 dark:bg-orange-950/20 space-y-2">
+                    <p className="text-xl font-semibold text-orange-900 dark:text-orange-100">{event.title}</p>
                     {event.description && (
-                      <p className="text-xs text-muted-foreground">{event.description}</p>
+                      <p className="text-base text-muted-foreground whitespace-pre-line">{event.description}</p>
                     )}
                   </div>
                 ))}

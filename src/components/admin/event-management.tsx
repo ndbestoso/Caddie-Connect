@@ -42,14 +42,46 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2 } from "lucide-react";
+
+// Generate time options in 15-minute intervals
+const generateTimeOptions = () => {
+  const options: string[] = [];
+  for (let hour = 0; hour < 24; hour++) {
+    for (let minute = 0; minute < 60; minute += 15) {
+      const h = hour.toString().padStart(2, "0");
+      const m = minute.toString().padStart(2, "0");
+      options.push(`${h}:${m}`);
+    }
+  }
+  return options;
+};
+
+const timeOptions = generateTimeOptions();
+
+const formatTimeDisplay = (time: string) => {
+  const [hours, minutes] = time.split(":");
+  const hour = parseInt(hours);
+  const ampm = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${minutes} ${ampm}`;
+};
 
 interface EventData {
   id: string;
   title: string;
   description: string;
   date: string;
+  startTime: string;
+  endTime: string;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -70,6 +102,8 @@ export function EventManagement() {
     title: "",
     description: "",
     date: format(new Date(), "yyyy-MM-dd"),
+    startTime: "08:00",
+    endTime: "17:00",
   });
 
   React.useEffect(() => {
@@ -110,6 +144,8 @@ export function EventManagement() {
         title: formData.title,
         description: formData.description,
         date: new Date(formData.date).toISOString(),
+        startTime: formData.startTime,
+        endTime: formData.endTime,
         createdBy: user.uid,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -121,7 +157,7 @@ export function EventManagement() {
       });
 
       setCreateDialogOpen(false);
-      setFormData({ title: "", description: "", date: format(new Date(), "yyyy-MM-dd") });
+      setFormData({ title: "", description: "", date: format(new Date(), "yyyy-MM-dd"), startTime: "08:00", endTime: "17:00" });
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -143,6 +179,8 @@ export function EventManagement() {
         title: formData.title,
         description: formData.description,
         date: new Date(formData.date).toISOString(),
+        startTime: formData.startTime,
+        endTime: formData.endTime,
         updatedAt: new Date().toISOString(),
       });
 
@@ -195,6 +233,8 @@ export function EventManagement() {
       title: event.title,
       description: event.description,
       date: format(new Date(event.date), "yyyy-MM-dd"),
+      startTime: event.startTime || "08:00",
+      endTime: event.endTime || "17:00",
     });
     setEditDialogOpen(true);
   };
@@ -254,6 +294,48 @@ export function EventManagement() {
                       required
                     />
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">
+                        Start Time
+                      </label>
+                      <Select
+                        value={formData.startTime}
+                        onValueChange={(value) => setFormData({ ...formData, startTime: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {timeOptions.map((time) => (
+                            <SelectItem key={time} value={time}>
+                              {formatTimeDisplay(time)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">
+                        End Time
+                      </label>
+                      <Select
+                        value={formData.endTime}
+                        onValueChange={(value) => setFormData({ ...formData, endTime: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {timeOptions.map((time) => (
+                            <SelectItem key={time} value={time}>
+                              {formatTimeDisplay(time)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                   <div className="space-y-2">
                     <label htmlFor="description" className="text-sm font-medium">
                       Description (optional)
@@ -262,6 +344,11 @@ export function EventManagement() {
                       id="description"
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.stopPropagation();
+                        }
+                      }}
                       placeholder="Additional details about the event..."
                       rows={3}
                     />
@@ -284,6 +371,7 @@ export function EventManagement() {
               <TableRow>
                 <TableHead>Event</TableHead>
                 <TableHead>Date</TableHead>
+                <TableHead>Time</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -298,8 +386,13 @@ export function EventManagement() {
                     <TableCell>
                       {format(new Date(event.date), "MMM d, yyyy")}
                     </TableCell>
+                    <TableCell>
+                      {event.startTime && event.endTime
+                        ? `${formatTimeDisplay(event.startTime)} - ${formatTimeDisplay(event.endTime)}`
+                        : "—"}
+                    </TableCell>
                     <TableCell className="max-w-xs">
-                      <div className="truncate text-muted-foreground">
+                      <div className="text-muted-foreground whitespace-pre-line">
                         {event.description || "—"}
                       </div>
                     </TableCell>
@@ -326,7 +419,7 @@ export function EventManagement() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={4}
+                    colSpan={5}
                     className="h-24 text-center text-muted-foreground"
                   >
                     No events yet. Add your first event.
@@ -371,6 +464,48 @@ export function EventManagement() {
                   required
                 />
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Start Time
+                  </label>
+                  <Select
+                    value={formData.startTime}
+                    onValueChange={(value) => setFormData({ ...formData, startTime: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {timeOptions.map((time) => (
+                        <SelectItem key={time} value={time}>
+                          {formatTimeDisplay(time)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    End Time
+                  </label>
+                  <Select
+                    value={formData.endTime}
+                    onValueChange={(value) => setFormData({ ...formData, endTime: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {timeOptions.map((time) => (
+                        <SelectItem key={time} value={time}>
+                          {formatTimeDisplay(time)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               <div className="space-y-2">
                 <label htmlFor="edit-description" className="text-sm font-medium">
                   Description (optional)
@@ -379,6 +514,11 @@ export function EventManagement() {
                   id="edit-description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.stopPropagation();
+                    }
+                  }}
                   rows={3}
                 />
               </div>

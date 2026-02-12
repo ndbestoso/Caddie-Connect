@@ -69,8 +69,7 @@ export function Announcements() {
     const announcementsRef = collection(db, "announcements");
     const q = query(
       announcementsRef,
-      where("isActive", "==", true),
-      orderBy("date", "desc")
+      where("isActive", "==", true)
     );
 
     const unsubscribe = onSnapshot(
@@ -80,6 +79,8 @@ export function Announcements() {
           id: doc.id,
           ...doc.data()
         })) as AnnouncementData[];
+        // Sort by date descending client-side
+        data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setAnnouncements(data);
         setLoading(false);
       },

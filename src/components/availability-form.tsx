@@ -330,7 +330,7 @@ export function AvailabilityForm() {
                             <div key={event.id} className="bg-white/60 rounded-md p-2">
                               <p className="font-medium text-sm">{event.title}</p>
                               {event.description && (
-                                <p className="text-xs text-muted-foreground mt-0.5">{event.description}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5 whitespace-pre-line">{event.description}</p>
                               )}
                             </div>
                           ))}

@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { signInSchema, type SignInFormData } from "@/lib/validations/auth";
+import { Eye, EyeOff } from "lucide-react";
 
 interface SignInFormProps {
   onToggleForm: () => void;
@@ -26,6 +27,7 @@ export function SignInForm({ onToggleForm, onForgotPassword }: SignInFormProps) 
   const { signIn } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
 
   const form = useForm<SignInFormData>({
     resolver: zodResolver(signInSchema),
@@ -39,10 +41,6 @@ export function SignInForm({ onToggleForm, onForgotPassword }: SignInFormProps) 
     setIsLoading(true);
     try {
       await signIn(data.email, data.password);
-      toast({
-        title: "Welcome back!",
-        description: "You have signed in successfully.",
-      });
     } catch (error) {
       toast({
         variant: "destructive",
@@ -100,12 +98,27 @@ export function SignInForm({ onToggleForm, onForgotPassword }: SignInFormProps) 
                   </Button>
                 </div>
                 <FormControl>
-                  <Input
-                    type="password"
-                    placeholder="Enter your password"
-                    className="h-11"
-                    {...field}
-                  />
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter your password"
+                      className="h-11 pr-10"
+                      {...field}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-11 px-3 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>

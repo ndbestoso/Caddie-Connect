@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { signUpSchema, type SignUpFormData } from "@/lib/validations/auth";
+import { Eye, EyeOff } from "lucide-react";
 
 interface SignUpFormProps {
   onToggleForm: () => void;
@@ -25,6 +26,8 @@ export function SignUpForm({ onToggleForm }: SignUpFormProps) {
   const { signUp } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
   const form = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
@@ -41,10 +44,6 @@ export function SignUpForm({ onToggleForm }: SignUpFormProps) {
     setIsLoading(true);
     try {
       await signUp(data.email, data.password, data.firstName, data.lastName);
-      toast({
-        title: "Account created",
-        description: "Welcome to Caddie Connect!",
-      });
     } catch (error) {
       toast({
         variant: "destructive",
@@ -130,12 +129,27 @@ export function SignUpForm({ onToggleForm }: SignUpFormProps) {
               <FormItem>
                 <FormLabel className="text-sm font-medium">Password</FormLabel>
                 <FormControl>
-                  <Input
-                    type="password"
-                    placeholder="Create a password"
-                    className="h-11"
-                    {...field}
-                  />
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Create a password"
+                      className="h-11 pr-10"
+                      {...field}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-11 px-3 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -148,12 +162,27 @@ export function SignUpForm({ onToggleForm }: SignUpFormProps) {
               <FormItem>
                 <FormLabel className="text-sm font-medium">Confirm password</FormLabel>
                 <FormControl>
-                  <Input
-                    type="password"
-                    placeholder="Confirm your password"
-                    className="h-11"
-                    {...field}
-                  />
+                  <div className="relative">
+                    <Input
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Confirm your password"
+                      className="h-11 pr-10"
+                      {...field}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-11 px-3 hover:bg-transparent"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
