@@ -116,13 +116,13 @@ export default function AccountPage() {
             Account Settings
           </h1>
         </div>
-        <Link href="/">
-          <Button variant="outline" size="sm" className="h-9">
+        <Button variant="outline" size="sm" className="h-9" asChild>
+          <Link href="/">
             <ArrowLeft className="h-4 w-4 mr-2" />
             <span className="hidden md:inline">Back to Home</span>
             <span className="md:hidden">Back</span>
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </header>
 
       <main className="flex flex-1 flex-col gap-6 p-6 md:gap-8 md:p-8 lg:p-10 max-w-[800px] mx-auto w-full">
