@@ -190,14 +190,18 @@ export function AvailabilityForm() {
         (d) => format(d, "yyyy-MM-dd") === dateKey
       );
 
-      await setDoc(doc(db, "availability", docId), {
+      const now = new Date().toISOString();
+      const docData: Record<string, string> = {
         userId: user.uid,
-        userEmail: user.email,
+        userEmail: user.email || "",
         date: selectedDate.toISOString(),
         time: selectedTime,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+        updatedAt: now,
+      };
+      if (!isUpdate) {
+        docData.createdAt = now;
+      }
+      await setDoc(doc(db, "availability", docId), docData, { merge: true });
 
       toast({
         title: isUpdate ? "Availability Updated" : "Availability Submitted",

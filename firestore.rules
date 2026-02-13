@@ -40,11 +40,9 @@ service cloud.firestore {
                     && request.resource.data.keys().hasAll(['email', 'firstName', 'lastName', 'name', 'role', 'createdAt', 'updatedAt'])
                     && request.resource.data.role == 'caddie';
 
-      // Users can update their own non-role fields (email, name);
+      // Users can update their own fields but cannot change their role;
       // Admins can update anything (including role changes)
-      allow update: if isOwner(userId)
-                       && !('role' in request.resource.data
-                            && request.resource.data.role != resource.data.role)
+      allow update: if (isOwner(userId) && request.resource.data.role == resource.data.role)
                     || isAdmin();
 
       allow delete: if isAdmin();
@@ -85,7 +83,11 @@ service cloud.firestore {
                     && isValidTimeSlot(request.resource.data.time)
                     && request.resource.data.createdBy == request.auth.uid;
 
-      allow update: if isAdmin();
+      // Admins can update anything; caddies can only update caddieEmail on their own assignments (email sync)
+      allow update: if isAdmin()
+                    || (isAuthenticated()
+                        && resource.data.caddieId == request.auth.uid
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['caddieEmail', 'updatedAt']));
       allow delete: if isAdmin();
     }
 
@@ -112,7 +114,7 @@ service cloud.firestore {
       allow read: if isAuthenticated();
 
       allow create: if isAdmin()
-                    && request.resource.data.keys().hasAll(['title', 'date', 'startTime', 'endTime', 'createdBy', 'createdAt', 'updatedAt'])
+                    && request.resource.data.keys().hasAll(['title', 'description', 'date', 'startTime', 'endTime', 'createdBy', 'createdAt', 'updatedAt'])
                     && request.resource.data.createdBy == request.auth.uid;
 
       allow update: if isAdmin();

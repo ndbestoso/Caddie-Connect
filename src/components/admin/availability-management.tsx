@@ -551,12 +551,9 @@ export function AvailabilityManagement() {
                   <SelectValue placeholder="Select a time" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="7am">7am</SelectItem>
-                  <SelectItem value="8am">8am</SelectItem>
-                  <SelectItem value="9am">9am</SelectItem>
-                  <SelectItem value="10am">10am</SelectItem>
-                  <SelectItem value="11am">11am</SelectItem>
-                  <SelectItem value="12pm">12pm</SelectItem>
+                  {TIME_SLOTS.map((slot) => (
+                    <SelectItem key={slot} value={slot}>{slot}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
