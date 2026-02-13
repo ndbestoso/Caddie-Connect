@@ -3,10 +3,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isAdmin() {
-      return request.auth != null &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
+    // -----------------------------------------------------------------------
+    // Helper functions
+    // -----------------------------------------------------------------------
 
     function isAuthenticated() {
       return request.auth != null;
@@ -16,27 +15,108 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
-    match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow create: if isOwner(userId);
-      allow update, delete: if isAdmin();
+    function isAdmin() {
+      return request.auth != null &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    match /availability/{document} {
+    function isValidRole(role) {
+      return role in ['caddie', 'admin'];
+    }
+
+    function isValidTimeSlot(time) {
+      return time in ['7am', '8am', '9am', '10am', '11am', '12pm'];
+    }
+
+    // -----------------------------------------------------------------------
+    // Collection: users/{userId}
+    // -----------------------------------------------------------------------
+
+    match /users/{userId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update: if isOwner(resource.data.userId) || isAdmin();
+
+      // Users can create their own doc on signup
+      allow create: if isOwner(userId)
+                    && request.resource.data.keys().hasAll(['email', 'firstName', 'lastName', 'name', 'role', 'createdAt', 'updatedAt'])
+                    && request.resource.data.role == 'caddie';
+
+      // Users can update their own non-role fields (email, name);
+      // Admins can update anything (including role changes)
+      allow update: if isOwner(userId)
+                       && !('role' in request.resource.data
+                            && request.resource.data.role != resource.data.role)
+                    || isAdmin();
+
       allow delete: if isAdmin();
     }
 
+    // -----------------------------------------------------------------------
+    // Collection: availability/{document}
+    // -----------------------------------------------------------------------
+
+    match /availability/{document} {
+      allow read: if isAuthenticated();
+
+      // Caddies can only create availability for themselves with valid fields
+      allow create: if isAuthenticated()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.keys().hasAll(['userId', 'userEmail', 'date', 'time', 'createdAt', 'updatedAt'])
+                    && isValidTimeSlot(request.resource.data.time);
+
+      // Owner can update their own availability (e.g. changing time preference);
+      // admin can update any
+      allow update: if (isAuthenticated() && request.resource.data.userId == request.auth.uid)
+                    || isAdmin();
+
+      // Only admins can delete
+      allow delete: if isAdmin();
+    }
+
+    // -----------------------------------------------------------------------
+    // Collection: assignments/{document}
+    // -----------------------------------------------------------------------
+
     match /assignments/{document} {
       allow read: if isAuthenticated();
-      allow create, update, delete: if isAdmin();
+
+      // Only admins can create with required fields
+      allow create: if isAdmin()
+                    && request.resource.data.keys().hasAll(['caddieId', 'caddieEmail', 'date', 'time', 'notes', 'createdBy', 'createdAt', 'updatedAt'])
+                    && isValidTimeSlot(request.resource.data.time)
+                    && request.resource.data.createdBy == request.auth.uid;
+
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
+
+    // -----------------------------------------------------------------------
+    // Collection: announcements/{document}
+    // -----------------------------------------------------------------------
 
     match /announcements/{document} {
       allow read: if isAuthenticated();
-      allow create, update, delete: if isAdmin();
+
+      allow create: if isAdmin()
+                    && request.resource.data.keys().hasAll(['title', 'content', 'date', 'isActive', 'createdBy', 'createdAt', 'updatedAt'])
+                    && request.resource.data.createdBy == request.auth.uid;
+
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // -----------------------------------------------------------------------
+    // Collection: events/{document}
+    // -----------------------------------------------------------------------
+
+    match /events/{document} {
+      allow read: if isAuthenticated();
+
+      allow create: if isAdmin()
+                    && request.resource.data.keys().hasAll(['title', 'date', 'startTime', 'endTime', 'createdBy', 'createdAt', 'updatedAt'])
+                    && request.resource.data.createdBy == request.auth.uid;
+
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
   }
 }

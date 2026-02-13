@@ -35,16 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Edit, Shield, User } from "lucide-react";
-
-interface UserData {
-  id: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  role: 'caddie' | 'admin';
-  createdAt: string;
-  updatedAt: string;
-}
+import { type UserData } from "@/lib/types/firestore";
 
 export function UserManagement() {
   const { user } = useAuth();
@@ -192,7 +183,9 @@ export function UserManagement() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(userData.createdAt), "MMM d, yyyy")}
+                        {userData.createdAt
+                          ? format(new Date(userData.createdAt), "MMM d, yyyy")
+                          : "—"}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button

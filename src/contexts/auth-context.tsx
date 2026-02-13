@@ -13,7 +13,7 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential,
 } from "firebase/auth";
-import { doc, setDoc, onSnapshot, getDoc } from "firebase/firestore";
+import { doc, setDoc, onSnapshot, getDoc, collection, query, where, getDocs, writeBatch } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
 interface AuthContextType {
@@ -149,7 +149,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const credential = EmailAuthProvider.credential(user.email, currentPassword);
       await reauthenticateWithCredential(user, credential);
       await firebaseUpdateEmail(user, newEmail);
-      await setDoc(doc(db, "users", user.uid), { email: newEmail, updatedAt: new Date().toISOString() }, { merge: true });
+
+      // Batch-update denormalized email across all collections
+      const batch = writeBatch(db);
+
+      // Update users doc
+      batch.update(doc(db, "users", user.uid), {
+        email: newEmail,
+        updatedAt: new Date().toISOString(),
+      });
+
+      // Sync userEmail in availability docs
+      const availSnap = await getDocs(
+        query(collection(db, "availability"), where("userId", "==", user.uid))
+      );
+      availSnap.docs.forEach((d) => {
+        batch.update(d.ref, { userEmail: newEmail });
+      });
+
+      // Sync caddieEmail in assignment docs
+      const assignSnap = await getDocs(
+        query(collection(db, "assignments"), where("caddieId", "==", user.uid))
+      );
+      assignSnap.docs.forEach((d) => {
+        batch.update(d.ref, { caddieEmail: newEmail });
+      });
+
+      await batch.commit();
     } catch (error: any) {
       const errorCode = error?.code;
       switch (errorCode) {

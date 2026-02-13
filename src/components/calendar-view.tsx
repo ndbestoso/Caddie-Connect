@@ -17,26 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, isSameDay } from "date-fns";
 import { CheckCircle2, CalendarCheck, Calendar as CalendarIcon } from "lucide-react";
-
-interface AssignmentData {
-  id: string;
-  date: string;
-  time: string;
-  notes: string;
-}
-
-interface AvailabilityData {
-  id: string;
-  date: string;
-  time: string;
-}
-
-interface EventData {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-}
+import { type AssignmentData, type AvailabilityData, type EventData } from "@/lib/types/firestore";
 
 export function CalendarView() {
   const { user } = useAuth();

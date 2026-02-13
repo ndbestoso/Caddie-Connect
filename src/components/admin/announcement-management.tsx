@@ -52,17 +52,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-interface AnnouncementData {
-  id: string;
-  title: string;
-  content: string;
-  date: string;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-  isActive: boolean;
-}
+import { type AnnouncementData } from "@/lib/types/firestore";
 
 export function AnnouncementManagement() {
   const { user } = useAuth();

@@ -22,15 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-
-interface AssignmentData {
-  id: string;
-  caddieId: string;
-  date: string;
-  time: string;
-  notes: string;
-  assignment: 'Forecaddie' | 'Single Bag' | 'Double Bag';
-}
+import { type AssignmentData } from "@/lib/types/firestore";
 
 export function ScheduleView() {
   const { user } = useAuth();

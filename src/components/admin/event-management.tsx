@@ -51,6 +51,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2 } from "lucide-react";
+import { type EventData } from "@/lib/types/firestore";
 
 // Generate time options in 15-minute intervals
 const generateTimeOptions = () => {
@@ -74,18 +75,6 @@ const formatTimeDisplay = (time: string) => {
   const displayHour = hour % 12 || 12;
   return `${displayHour}:${minutes} ${ampm}`;
 };
-
-interface EventData {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-}
 
 export function EventManagement() {
   const { user } = useAuth();
