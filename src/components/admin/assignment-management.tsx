@@ -68,6 +68,8 @@ interface AssignmentData {
 interface UserData {
   id: string;
   email: string;
+  firstName?: string;
+  lastName?: string;
   role: 'caddie' | 'admin';
 }
 
@@ -133,9 +135,41 @@ export function AssignmentManagement() {
     return unsubscribe;
   }, []);
 
+  const getCaddieName = (caddie: UserData) => {
+    if (caddie.firstName || caddie.lastName) {
+      return `${caddie.firstName || ""} ${caddie.lastName || ""}`.trim();
+    }
+    return caddie.email;
+  };
+
+  // Sort caddies alphabetically by name for the dropdown
+  const sortedCaddies = [...caddies].sort((a, b) =>
+    getCaddieName(a).toLowerCase().localeCompare(getCaddieName(b).toLowerCase())
+  );
+
+  // Returns true if it's past 10pm EST the night before the given date
+  const isPastAssignmentCutoff = (dateStr: string) => {
+    const now = new Date();
+    const estNow = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+    const date = new Date(dateStr + "T00:00:00");
+    const cutoff = new Date(date);
+    cutoff.setDate(cutoff.getDate() - 1);
+    cutoff.setHours(22, 0, 0, 0);
+    return estNow >= cutoff;
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    if (isPastAssignmentCutoff(formData.date)) {
+      toast({
+        variant: "destructive",
+        title: "Assignment window closed",
+        description: "Assignments cannot be created after 10pm EST the night before.",
+      });
+      return;
+    }
 
     const selectedCaddie = caddies.find(c => c.id === formData.caddieId);
     if (!selectedCaddie) {
@@ -162,7 +196,7 @@ export function AssignmentManagement() {
 
       toast({
         title: "Assignment created",
-        description: `Assignment created for ${selectedCaddie.email}.`,
+        description: `Assignment created for ${getCaddieName(selectedCaddie)}.`,
       });
 
       setCreateDialogOpen(false);
@@ -248,9 +282,9 @@ export function AssignmentManagement() {
                         <SelectValue placeholder="Select a caddie" />
                       </SelectTrigger>
                       <SelectContent>
-                        {caddies.map((caddie) => (
+                        {sortedCaddies.map((caddie) => (
                           <SelectItem key={caddie.id} value={caddie.id}>
-                            {caddie.email}
+                            {getCaddieName(caddie)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -265,6 +299,8 @@ export function AssignmentManagement() {
                       type="date"
                       value={formData.date}
                       onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      onClick={(e) => (e.target as HTMLInputElement).showPicker()}
+                      className="cursor-pointer"
                       required
                     />
                   </div>
@@ -272,23 +308,28 @@ export function AssignmentManagement() {
                     <label htmlFor="time" className="text-sm font-medium">
                       Arrival Time
                     </label>
-                    <Input
-                      id="time"
-                      type="text"
-                      placeholder="e.g., 7:30 AM"
-                      value={formData.time}
-                      onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                      required
-                    />
+                    <Select value={formData.time} onValueChange={(value) => setFormData({ ...formData, time: value })}>
+                      <SelectTrigger id="time">
+                        <SelectValue placeholder="Select a time" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7am">7am</SelectItem>
+                        <SelectItem value="8am">8am</SelectItem>
+                        <SelectItem value="9am">9am</SelectItem>
+                        <SelectItem value="10am">10am</SelectItem>
+                        <SelectItem value="11am">11am</SelectItem>
+                        <SelectItem value="12pm">12pm</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="notes" className="text-sm font-medium">
-                      Notes / Course
+                      Notes
                     </label>
                     <Input
                       id="notes"
                       type="text"
-                      placeholder="e.g., North Course"
+                      placeholder=""
                       value={formData.notes}
                       onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                       required
@@ -322,7 +363,10 @@ export function AssignmentManagement() {
                 assignments.map((assignment) => (
                   <TableRow key={assignment.id}>
                     <TableCell className="font-medium">
-                      {assignment.caddieEmail}
+                      {(() => {
+                        const caddie = caddies.find(c => c.id === assignment.caddieId);
+                        return caddie ? getCaddieName(caddie) : assignment.caddieEmail;
+                      })()}
                     </TableCell>
                     <TableCell>
                       {format(new Date(assignment.date), "EEE, MMM d")}

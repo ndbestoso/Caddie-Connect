@@ -32,7 +32,7 @@ const testCaddies = [
 ];
 
 // Correct time options from the app
-const TIME_OPTIONS = ['7am-9am', '10am', '11am', '12pm'];
+const TIME_OPTIONS = ['7am', '8am', '9am', '10am', '11am', '12pm'];
 
 function getWeekDates() {
   const dates = [];
@@ -62,21 +62,18 @@ async function updateTestAvailability() {
   console.log('Adding availability for week:', weekDates[0], 'to', weekDates[7]);
   console.log('');
 
-  // If admin credentials provided, sign in as admin first to delete old records
   if (adminEmail && adminPassword) {
     try {
       console.log('Signing in as admin to delete old records...');
       await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
       console.log('✓ Signed in as admin\n');
 
-      // Delete all test caddie availability
       for (const caddie of testCaddies) {
         const availQuery = query(
           collection(db, 'availability'),
           where('userEmail', '==', caddie.email)
         );
         const availSnapshot = await getDocs(availQuery);
-
         for (const docSnap of availSnapshot.docs) {
           await deleteDoc(doc(db, 'availability', docSnap.id));
         }
@@ -85,32 +82,24 @@ async function updateTestAvailability() {
       console.log('');
     } catch (error) {
       console.error('Admin sign-in failed:', error.message);
-      console.log('Continuing without deleting old records...\n');
+      process.exit(1);
     }
-  } else {
-    console.log('No admin credentials provided. Old records will not be deleted.');
-    console.log('Usage: node scripts/update-test-availability.js [admin-email] [admin-password]\n');
   }
 
-  // Now sign in as each caddie and add new availability
+  // Sign in as each caddie and add fresh availability
   for (const caddie of testCaddies) {
     try {
       console.log(`Processing ${caddie.email}...`);
 
-      // Sign in as this user
+      // Sign in as this caddie
       const userCredential = await signInWithEmailAndPassword(auth, caddie.email, caddie.password);
       const user = userCredential.user;
 
-      // Create new random availability for 3-5 days this week
-      const numDays = Math.floor(Math.random() * 3) + 3; // 3-5 days
-      const shuffledDates = [...weekDates].sort(() => Math.random() - 0.5);
-      const selectedDates = shuffledDates.slice(0, numDays);
-
-      const addedTimes = [];
-      for (const dateStr of selectedDates) {
+      // Create availability for each day of the week with exactly one time
+      const addedEntries = [];
+      for (const dateStr of weekDates) {
         const time = getRandomTime();
         const date = new Date(dateStr + 'T12:00:00');
-        addedTimes.push(time);
 
         await addDoc(collection(db, 'availability'), {
           userId: user.uid,
@@ -119,8 +108,10 @@ async function updateTestAvailability() {
           time: time,
           createdAt: new Date().toISOString(),
         });
+        addedEntries.push(`${dateStr}: ${time}`);
       }
-      console.log(`  ✓ Added ${selectedDates.length} days: ${addedTimes.join(', ')}`);
+      console.log(`  ✓ Added ${addedEntries.length} days (one time each):`);
+      addedEntries.forEach(e => console.log(`    ${e}`));
 
     } catch (error) {
       console.error(`  ✗ Error: ${error.message}`);

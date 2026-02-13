@@ -28,7 +28,9 @@ interface EventData {
 }
 
 const TIME_OPTIONS = [
-  { id: "7am-9am", label: "7am - 9am" },
+  { id: "7am", label: "7am" },
+  { id: "8am", label: "8am" },
+  { id: "9am", label: "9am" },
   { id: "10am", label: "10am" },
   { id: "11am", label: "11am" },
   { id: "12pm", label: "12pm" },
@@ -130,10 +132,18 @@ export function AvailabilityForm() {
     return () => unsubscribe();
   }, []);
 
-  // Filter submitted dates: locked if passed or within 8 hours
-  const now = new Date();
-  const eightHoursFromNow = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-  const lockedDates = submittedDates.filter((date) => date <= eightHoursFromNow || date < now);
+  // Returns true if it's past 8pm EST the night before the given date
+  const isPastSubmitCutoff = (date: Date) => {
+    const now = new Date();
+    const estNow = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+    const cutoff = new Date(date);
+    cutoff.setDate(cutoff.getDate() - 1);
+    cutoff.setHours(20, 0, 0, 0);
+    return estNow >= cutoff;
+  };
+
+  // Filter submitted dates: locked if past cutoff
+  const lockedDates = submittedDates.filter((date) => isPastSubmitCutoff(date));
 
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
@@ -163,6 +173,15 @@ export function AvailabilityForm() {
         variant: "destructive",
         title: "No Time Selected",
         description: "Please select a time preference.",
+      });
+      return;
+    }
+
+    if (isPastSubmitCutoff(selectedDate)) {
+      toast({
+        variant: "destructive",
+        title: "Submission Closed",
+        description: "Tomorrows arrival times have been assigned, please contact ND",
       });
       return;
     }
@@ -225,6 +244,7 @@ export function AvailabilityForm() {
                   const today = new Date();
                   today.setHours(0, 0, 0, 0);
                   const isPast = day < today;
+                  const isClosed = isPastSubmitCutoff(day);
                   const isSelected = selectedDate && isSameDay(day, selectedDate);
                   const isSubmitted = submittedDates.some((date) =>
                     format(date, "yyyy-MM-dd") === format(day, "yyyy-MM-dd")
@@ -237,7 +257,7 @@ export function AvailabilityForm() {
                     <button
                       key={day.toISOString()}
                       type="button"
-                      disabled={isPast}
+                      disabled={isPast || (isClosed && !isSubmitted)}
                       onClick={() => handleDateClick(day)}
                       className={cn(
                         "flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all",
