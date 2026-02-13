@@ -25,21 +25,21 @@ export function AdminHeader() {
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <Link href="/">
-          <Button variant="outline" size="sm" className="h-9">
+        <Button variant="outline" size="sm" className="h-9" asChild>
+          <Link href="/">
             <ArrowLeft className="h-4 w-4 mr-2" />
             <span className="hidden md:inline">Back to Caddie View</span>
             <span className="md:hidden">Back</span>
-          </Button>
-        </Link>
+          </Link>
+        </Button>
         {user && (
           <>
-            <Link href="/account">
-              <Button variant="ghost" size="sm" className="h-9 hidden lg:flex">
+            <Button variant="ghost" size="sm" className="h-9 hidden lg:flex" asChild>
+              <Link href="/account">
                 <User className="h-4 w-4 mr-2" />
                 {userName || user.email}
-              </Button>
-            </Link>
+              </Link>
+            </Button>
             <Button variant="ghost" size="sm" onClick={signOut} className="h-9">
               <LogOut className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Sign Out</span>

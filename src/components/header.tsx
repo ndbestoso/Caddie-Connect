@@ -22,20 +22,20 @@ export function Header() {
       {user && (
         <div className="flex items-center gap-2">
           {isAdmin && (
-            <Link href="/admin">
-              <Button variant="default" size="sm" className="h-9">
+            <Button variant="default" size="sm" className="h-9" asChild>
+              <Link href="/admin">
                 <Shield className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">Admin Panel</span>
                 <span className="sm:hidden">Admin</span>
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           )}
-          <Link href="/account">
-            <Button variant="ghost" size="sm" className="h-9 hidden md:flex">
+          <Button variant="ghost" size="sm" className="h-9 hidden md:flex" asChild>
+            <Link href="/account">
               <User className="h-4 w-4 mr-2" />
               {userName || user.email}
-            </Button>
-          </Link>
+            </Link>
+          </Button>
           <Button variant="ghost" size="sm" onClick={signOut} className="h-9">
             <LogOut className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Sign Out</span>

@@ -1,22 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AuthForms } from "@/components/auth";
 import { useAuth } from "@/contexts/auth-context";
+import { Header } from "@/components/header";
+import { AvailabilityForm } from "@/components/availability-form";
+import { ScheduleView } from "@/components/schedule-view";
+import { Announcements } from "@/components/announcements";
 
 export default function Home() {
   const { user, loading } = useAuth();
-  const router = useRouter();
 
-  useEffect(() => {
-    if (!loading && user) {
-      router.replace("/admin");
-    }
-  }, [user, loading, router]);
-
-  if (loading || user) {
+  if (loading) {
     return (
       <div className="flex min-h-screen w-full flex-col">
         <div className="flex h-16 shrink-0 items-center gap-4 border-b bg-card px-4 md:px-6">
@@ -31,5 +26,20 @@ export default function Home() {
     );
   }
 
-  return <AuthForms />;
+  if (!user) {
+    return <AuthForms />;
+  }
+
+  return (
+    <div className="flex min-h-screen w-full flex-col">
+      <Header />
+      <main className="flex flex-1 flex-col gap-6 p-6 md:gap-8 md:p-8 lg:p-10 max-w-[1600px] mx-auto w-full">
+        <div className="grid gap-6 lg:grid-cols-2">
+          <AvailabilityForm />
+          <ScheduleView />
+        </div>
+        <Announcements />
+      </main>
+    </div>
+  );
 }
