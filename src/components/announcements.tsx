@@ -14,14 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Calendar } from "lucide-react";
-
-interface AnnouncementData {
-  id: string;
-  title: string;
-  content: string;
-  date: string;
-  isActive: boolean;
-}
+import { type AnnouncementData } from "@/lib/types/firestore";
 
 function formatAnnouncementContent(content: string) {
   const lines = content.split('\n');

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { format, startOfWeek, addDays, isSameDay, isToday } from "date-fns";
-import { collection, addDoc, query, where, onSnapshot, orderBy } from "firebase/firestore";
+import { collection, doc, setDoc, query, where, onSnapshot, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -19,22 +19,9 @@ import { cn } from "@/lib/utils";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { CalendarCheck } from "lucide-react";
+import { type EventData, TIME_SLOTS } from "@/lib/types/firestore";
 
-interface EventData {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-}
-
-const TIME_OPTIONS = [
-  { id: "7am", label: "7am" },
-  { id: "8am", label: "8am" },
-  { id: "9am", label: "9am" },
-  { id: "10am", label: "10am" },
-  { id: "11am", label: "11am" },
-  { id: "12pm", label: "12pm" },
-];
+const TIME_OPTIONS = TIME_SLOTS.map((slot) => ({ id: slot, label: slot }));
 
 export function AvailabilityForm() {
   const { toast } = useToast();
@@ -197,17 +184,24 @@ export function AvailabilityForm() {
 
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, "availability"), {
+      const dateKey = format(selectedDate, "yyyy-MM-dd");
+      const docId = `${user.uid}_${dateKey}`;
+      const isUpdate = submittedDates.some(
+        (d) => format(d, "yyyy-MM-dd") === dateKey
+      );
+
+      await setDoc(doc(db, "availability", docId), {
         userId: user.uid,
         userEmail: user.email,
         date: selectedDate.toISOString(),
         time: selectedTime,
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
 
       toast({
-        title: "Availability Submitted",
-        description: `You have submitted your availability for ${format(selectedDate, "EEE, MMM d")}.`,
+        title: isUpdate ? "Availability Updated" : "Availability Submitted",
+        description: `You have ${isUpdate ? "updated" : "submitted"} your availability for ${format(selectedDate, "EEE, MMM d")}.`,
       });
       // Reset form state after submission
       setSelectedDate(undefined);

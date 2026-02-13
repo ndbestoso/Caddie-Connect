@@ -51,27 +51,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2 } from "lucide-react";
-
-interface AssignmentData {
-  id: string;
-  caddieId: string;
-  caddieEmail: string;
-  date: string;
-  time: string;
-  notes: string;
-  assignment: 'Forecaddie' | 'Single Bag' | 'Double Bag';
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface UserData {
-  id: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  role: 'caddie' | 'admin';
-}
+import { type AssignmentData, type UserData, ASSIGNMENT_TYPES } from "@/lib/types/firestore";
 
 export function AssignmentManagement() {
   const { user } = useAuth();
@@ -89,6 +69,7 @@ export function AssignmentManagement() {
     date: format(new Date(), "yyyy-MM-dd"),
     time: "",
     notes: "",
+    assignment: "",
   });
 
   React.useEffect(() => {
@@ -189,6 +170,7 @@ export function AssignmentManagement() {
         date: new Date(formData.date).toISOString(),
         time: formData.time,
         notes: formData.notes,
+        ...(formData.assignment ? { assignment: formData.assignment } : {}),
         createdBy: user.uid,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -205,6 +187,7 @@ export function AssignmentManagement() {
         date: format(new Date(), "yyyy-MM-dd"),
         time: "",
         notes: "",
+        assignment: "",
       });
     } catch (error: any) {
       toast({
@@ -323,6 +306,23 @@ export function AssignmentManagement() {
                     </Select>
                   </div>
                   <div className="space-y-2">
+                    <label htmlFor="assignment-type" className="text-sm font-medium">
+                      Assignment Type
+                    </label>
+                    <Select value={formData.assignment} onValueChange={(value) => setFormData({ ...formData, assignment: value })}>
+                      <SelectTrigger id="assignment-type">
+                        <SelectValue placeholder="Select type (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ASSIGNMENT_TYPES.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
                     <label htmlFor="notes" className="text-sm font-medium">
                       Notes
                     </label>
@@ -354,6 +354,7 @@ export function AssignmentManagement() {
                 <TableHead>Caddie</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Arrival Time</TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead>Notes</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -372,6 +373,7 @@ export function AssignmentManagement() {
                       {format(new Date(assignment.date), "EEE, MMM d")}
                     </TableCell>
                     <TableCell>{assignment.time}</TableCell>
+                    <TableCell>{assignment.assignment || "—"}</TableCell>
                     <TableCell>{assignment.notes}</TableCell>
                     <TableCell className="text-right">
                       <Button
@@ -387,7 +389,7 @@ export function AssignmentManagement() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={6}
                     className="h-24 text-center text-muted-foreground"
                   >
                     No assignments yet. Create your first assignment.

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { collection, query, orderBy, onSnapshot, addDoc } from "firebase/firestore";
+import { collection, query, orderBy, where, onSnapshot, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/auth-context";
 import { format, startOfWeek, addDays, isSameDay, isToday } from "date-fns";
@@ -42,20 +42,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-
-interface AvailabilityData {
-  id: string;
-  userId: string;
-  userEmail: string;
-  date: string;
-  time: string;
-  createdAt: string;
-}
-
-interface UserData {
-  firstName?: string;
-  lastName?: string;
-}
+import { type AvailabilityData, type UserDoc, type AssignmentData, TIME_SLOTS, ASSIGNMENT_TYPES } from "@/lib/types/firestore";
 
 // Get the "current" week start (with Saturday 15:00 EST rotation)
 function getBaseWeekStart() {
@@ -81,18 +68,11 @@ function getWeekDays(weekOffset: number) {
   return Array.from({ length: 8 }, (_, i) => addDays(weekStart, i));
 }
 
-interface AssignmentData {
-  id: string;
-  caddieId: string;
-  date: string;
-  time: string;
-}
-
 export function AvailabilityManagement() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [availabilities, setAvailabilities] = React.useState<AvailabilityData[]>([]);
-  const [users, setUsers] = React.useState<Record<string, UserData>>({});
+  const [users, setUsers] = React.useState<Record<string, UserDoc>>({});
   const [assignments, setAssignments] = React.useState<AssignmentData[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [searchName, setSearchName] = React.useState("");
@@ -104,13 +84,26 @@ export function AvailabilityManagement() {
   const [assignCaddie, setAssignCaddie] = React.useState<AvailabilityData | null>(null);
   const [assignTime, setAssignTime] = React.useState("");
   const [assignNotes, setAssignNotes] = React.useState("");
+  const [assignType, setAssignType] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const weekDays = getWeekDays(weekOffset);
 
+  // Scope availability query to the displayed week range
   React.useEffect(() => {
+    const days = getWeekDays(weekOffset);
+    const weekStart = new Date(days[0]);
+    weekStart.setHours(0, 0, 0, 0);
+    const weekEnd = new Date(days[days.length - 1]);
+    weekEnd.setHours(23, 59, 59, 999);
+
     const availabilityRef = collection(db, "availability");
-    const q = query(availabilityRef, orderBy("date", "asc"));
+    const q = query(
+      availabilityRef,
+      where("date", ">=", weekStart.toISOString()),
+      where("date", "<=", weekEnd.toISOString()),
+      orderBy("date", "asc")
+    );
 
     const unsubscribe = onSnapshot(
       q,
@@ -129,16 +122,16 @@ export function AvailabilityManagement() {
     );
 
     return unsubscribe;
-  }, []);
+  }, [weekOffset]);
 
   React.useEffect(() => {
     const usersRef = collection(db, "users");
     const unsubscribe = onSnapshot(
       usersRef,
       (snapshot) => {
-        const userData: Record<string, UserData> = {};
+        const userData: Record<string, UserDoc> = {};
         snapshot.docs.forEach((doc) => {
-          userData[doc.id] = doc.data() as UserData;
+          userData[doc.id] = doc.data() as UserDoc;
         });
         setUsers(userData);
       },
@@ -150,27 +143,38 @@ export function AvailabilityManagement() {
     return unsubscribe;
   }, []);
 
+  // Scope assignments query to the displayed week range
   React.useEffect(() => {
+    const days = getWeekDays(weekOffset);
+    const weekStart = new Date(days[0]);
+    weekStart.setHours(0, 0, 0, 0);
+    const weekEnd = new Date(days[days.length - 1]);
+    weekEnd.setHours(23, 59, 59, 999);
+
     const assignmentsRef = collection(db, "assignments");
+    const q = query(
+      assignmentsRef,
+      where("date", ">=", weekStart.toISOString()),
+      where("date", "<=", weekEnd.toISOString()),
+      orderBy("date", "asc")
+    );
 
     const unsubscribe = onSnapshot(
-      assignmentsRef,
+      q,
       (snapshot) => {
         const data = snapshot.docs.map((doc) => ({
           id: doc.id,
-          caddieId: doc.data().caddieId || "",
-          date: doc.data().date || "",
-          time: doc.data().time || "",
+          ...doc.data(),
         })) as AssignmentData[];
         setAssignments(data);
       },
       (error) => {
-        console.error("ERROR fetching assignments:", error);
+        console.error("Error fetching assignments:", error);
       }
     );
 
     return unsubscribe;
-  }, []);
+  }, [weekOffset]);
 
   const getUserName = (userId: string, email: string) => {
     const user = users[userId];
@@ -188,7 +192,7 @@ export function AvailabilityManagement() {
     ).length;
   };
 
-  const TIME_ORDER = ["7am", "8am", "9am", "10am", "11am", "12pm"];
+  const TIME_ORDER: string[] = [...TIME_SLOTS];
 
   const handleSort = (column: "name" | "time" | "timeAssigned") => {
     if (sortColumn === column) {
@@ -229,6 +233,7 @@ export function AvailabilityManagement() {
     setAssignCaddie(item);
     setAssignTime("");
     setAssignNotes("");
+    setAssignType("");
     setAssignDialogOpen(true);
   };
 
@@ -243,6 +248,7 @@ export function AvailabilityManagement() {
         date: selectedDate.toISOString(),
         time: assignTime,
         notes: assignNotes,
+        ...(assignType ? { assignment: assignType } : {}),
         createdBy: user.uid,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -551,6 +557,21 @@ export function AvailabilityManagement() {
                   <SelectItem value="10am">10am</SelectItem>
                   <SelectItem value="11am">11am</SelectItem>
                   <SelectItem value="12pm">12pm</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Assignment Type</label>
+              <Select value={assignType} onValueChange={setAssignType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ASSIGNMENT_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
